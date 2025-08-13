@@ -40,12 +40,16 @@ export const deletePaste = createAsyncThunk('pastes/delete', async (id) => {
   return id;
 });
 
+// ...existing code...
 export const fetchPasteById = createAsyncThunk('pastes/fetchById', async (id) => {
   const { data, error } = await supabase
     .from('pastes')
     .select('*')
     .eq('id', id)
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error('fetchPasteById error:', error);
+    throw error;
+  }
   return data;
 });
