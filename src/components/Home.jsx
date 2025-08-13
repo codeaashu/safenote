@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+// ...existing code...
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,13 +14,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useSearchParams, NavLink } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 
-import {
-  addToPaste,
-  removeFromPaste,
-  updateToPaste,
-} from "../features/PasteSlice";
+
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchPastes, addPaste, updatePaste, deletePaste } from "../features/PasteThunks";
 import toast from "react-hot-toast";
 
 const Home = () => {
@@ -32,50 +30,60 @@ const Home = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const allPastes = useSelector((state) => state.paste.pastes);
+
   const dispatch = useDispatch();
+  const { pastes, loading } = useSelector((state) => state.paste);
+
+  useEffect(() => {
+    dispatch(fetchPastes());
+  }, [dispatch]);
 
   useEffect(() => {
     if (pasteId) {
-      const paste = allPastes.find((p) => p._id === pasteId);
+      const paste = pastes.find((p) => p.id === pasteId);
       if (paste) {
         setTitle(paste.title);
         setValue(paste.content);
       }
+    } else {
+      setTitle("");
+      setValue("");
     }
-  }, [pasteId, allPastes]);
+  }, [pasteId, pastes]);
 
   function createPaste() {
     if (!title.trim() || !value.trim()) {
       toast.error("Title and content are required!");
       return;
     }
-
-    const paste = {
-      title: title,
-      content: value,
-      _id: pasteId || Date.now().toString(36),
-      createdAt: new Date().toISOString(),
-    };
-
     if (pasteId) {
-      dispatch(updateToPaste(paste));
+      // Update existing paste
+      const paste = {
+        id: pasteId,
+        title,
+        content: value,
+      };
+      dispatch(updatePaste(paste)).then(() => {
+        setTitle("");
+        setValue("");
+        setSearchParam({});
+      });
     } else {
-      dispatch(addToPaste(paste));
+      // Add new paste
+      dispatch(addPaste({ title, content: value })).then(() => {
+        setTitle("");
+        setValue("");
+        setSearchParam({});
+      });
     }
-
-    setTitle("");
-    setValue("");
-    setSearchParam({});
   }
 
   const ShareMenu = ({ paste }) => {
-    const shareUrl = `${window.location.origin}/paste/${paste._id}`;
+    const shareUrl = `${window.location.origin}/paste/${paste.id}`;
     const copyToClipboard = () => {
       navigator.clipboard.writeText(shareUrl);
       toast.success("Link copied to clipboard!");
     };
-
     return (
       <Button
         size="sm"
@@ -102,19 +110,15 @@ const Home = () => {
 
   const confirmDelete = () => {
     if (deleteId) {
-      dispatch(removeFromPaste(deleteId));
-      setIsDeleteOpen(false);
-      setDeleteId(null);
+      dispatch(deletePaste(deleteId)).then(() => {
+        setIsDeleteOpen(false);
+        setDeleteId(null);
+      });
     }
   };
 
   const [searchTerm, setSearchTerm] = useState("");
-  const pastes = useSelector((state) => state.paste.pastes);
-
   const filteredData = [...pastes]
-    .sort((a, b) => {
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    })
     .filter((paste) =>
       paste.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -203,7 +207,7 @@ const Home = () => {
             <div className="flex-1 overflow-y-auto px-6 md:px-8 pb-6 md:pb-8 space-y-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-700/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-blue-500/50">
               {filteredData.map((paste) => (
                 <Card
-                  key={paste?._id}
+                  key={paste?.id}
                   className="bg-slate-900/50 border-slate-700/50 hover:border-blue-400 transition-all duration-300 cursor-pointer group"
                 >
                   <CardContent className="p-4">
@@ -216,9 +220,8 @@ const Home = () => {
                           {paste.content}
                         </p>
                         <p className="text-xs flex items-center gap-2 text-slate-400 mt-1">
-                  <Calendar className="w-4 h-4" />
-
-                          {new Date(paste.createdAt).toDateString()}
+                          <Calendar className="w-4 h-4" />
+                          {paste.created_at ? new Date(paste.created_at).toDateString() : ''}
                         </p>
                       </div>
                       <div className="flex items-start gap-1">
@@ -227,7 +230,7 @@ const Home = () => {
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-yellow-400 transition-all duration-300"
                         >
-                          <NavLink to={`/?pasteId=${paste?._id}`}>
+                          <NavLink to={`/?pasteId=${paste?.id}`}>
                             <Pencil className="w-4 h-4" />
                           </NavLink>
                         </Button>
@@ -236,7 +239,7 @@ const Home = () => {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-red-700 transition-all duration-300"
-                          onClick={() => handleDelete(paste._id)}
+                          onClick={() => handleDelete(paste.id)}
                         >
                           <Trash className="w-4 h-4" />
                         </Button>
@@ -246,7 +249,7 @@ const Home = () => {
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-orange-600 transition-all duration-300"
                         >
-                          <NavLink to={`paste/${paste?._id}`}>
+                          <NavLink to={`paste/${paste?.id}`}>
                             <Eye className="w-4 h-4" />
                           </NavLink>
                         </Button>
@@ -263,9 +266,9 @@ const Home = () => {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-green-500 transition-all duration-300"
-                          onClick={() => handleCopy(paste._id, paste.content)}
+                          onClick={() => handleCopy(paste.id, paste.content)}
                         >
-                          {copiedId === paste._id ? (
+                          {copiedId === paste.id ? (
                             <Check className="w-4 h-4" />
                           ) : (
                             <Copy className="w-4 h-4" />

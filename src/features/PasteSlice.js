@@ -1,78 +1,106 @@
 import { createSlice } from "@reduxjs/toolkit";
 import toast from 'react-hot-toast';
+import {
+  fetchPastes,
+  addPaste,
+  updatePaste,
+  deletePaste,
+  fetchPasteById
+} from './PasteThunks';
 
 const initialState = {
-  pastes: localStorage.getItem("pastes")
-    ? JSON.parse(localStorage.getItem("pastes"))
-    : [],
+  pastes: [],
+  loading: false,
+  error: null,
+  selectedPaste: null,
 };
 
 export const pasteSlice = createSlice({
   name: "safenote",
   initialState,
-  reducers: {
-    addToPaste: (state, action) => {
-      const paste = action.payload;
-      
-      // Validate empty paste
-      if (!paste.title.trim() || !paste.content.trim()) {
-        toast.error('Title and content are required!');
-        return;
-      }
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Fetch all pastes
+      .addCase(fetchPastes.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPastes.fulfilled, (state, action) => {
+        state.loading = false;
+        state.pastes = action.payload;
+      })
+      .addCase(fetchPastes.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
 
-      // Check for duplicate title
-      const isDuplicate = state.pastes.some(
-        (item) => item.title.toLowerCase() === paste.title.toLowerCase()
-      );
+      // Add paste
+      .addCase(addPaste.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(addPaste.fulfilled, (state, action) => {
+        state.loading = false;
+        state.pastes.unshift(action.payload);
+        toast.success('Paste created successfully');
+      })
+      .addCase(addPaste.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        toast.error('Failed to create paste');
+      })
 
-      if (isDuplicate) {
-        toast.error('A paste with this title already exists!');
-        return;
-      }
+      // Update paste
+      .addCase(updatePaste.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updatePaste.fulfilled, (state, action) => {
+        state.loading = false;
+        const idx = state.pastes.findIndex(p => p.id === action.payload.id);
+        if (idx !== -1) state.pastes[idx] = action.payload;
+        toast.success('Paste updated!');
+      })
+      .addCase(updatePaste.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        toast.error('Failed to update paste');
+      })
 
-      state.pastes.push(paste);
-      localStorage.setItem("pastes", JSON.stringify(state.pastes));
-      toast.success('Paste created successfully');
-    },
+      // Delete paste
+      .addCase(deletePaste.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deletePaste.fulfilled, (state, action) => {
+        state.loading = false;
+        state.pastes = state.pastes.filter(p => p.id !== action.payload);
+        toast.success('Paste deleted!');
+      })
+      .addCase(deletePaste.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        toast.error('Failed to delete paste');
+      })
 
-    updateToPaste: (state, action) => {
-      const paste = action.payload;
-      const index = state.pastes.findIndex((item) => 
-        item._id === paste._id
-      );
-      
-      // Validate empty paste
-      if (!paste.title.trim() || !paste.content.trim()) {
-        toast.error('Title and content are required!');
-        return;
-      }
-
-      if (index >= 0) {
-        state.pastes[index] = paste;
-        localStorage.setItem("pastes", JSON.stringify(state.pastes));
-        toast.success('Paste Updated!');
-      }
-    },
-
-    removeFromPaste: (state, action) => {
-      const pasteId = action.payload;
-      const index = state.pastes.findIndex((item) => 
-        item._id === pasteId
-      );
-
-      if (index >= 0) {
-        state.pastes.splice(index, 1);
-        localStorage.setItem("pastes", JSON.stringify(state.pastes));
-        toast.success("Paste Deleted!");
-      }
-    },
-
-    resetAllPaste: (state) => {
-      state.pastes = [];
-      localStorage.removeItem("pastes");
-    },
+      // Fetch paste by id
+      .addCase(fetchPasteById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.selectedPaste = null;
+      })
+      .addCase(fetchPasteById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedPaste = action.payload;
+      })
+      .addCase(fetchPasteById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        state.selectedPaste = null;
+        toast.error('Paste not found');
+      });
   },
 });
 
-export const { addToPaste, updateToPaste, resetAllPaste, removeFromPaste } = pasteSlice.actions;
 export const pasteReducer = pasteSlice.reducer;

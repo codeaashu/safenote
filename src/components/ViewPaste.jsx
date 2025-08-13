@@ -1,22 +1,28 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, ArrowLeft, Check, Clock, Calendar } from "lucide-react";
+import { Copy, ArrowLeft, Check, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
-import { NavLink, useParams, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { fetchPasteById } from "../features/PasteThunks";
 
 const ViewPaste = () => {
   const [copiedId, setCopiedId] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
-  const allPastes = useSelector((state) => state.paste.pastes);
-  const paste = allPastes.find((p) => p._id === id);
+
+  const dispatch = useDispatch();
+  const { selectedPaste: paste, loading } = useSelector((state) => state.paste);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    if (id) {
+      dispatch(fetchPasteById(id));
+    }
+  }, [dispatch, id]);
 
   const handleCopy = (content) => {
     navigator.clipboard.writeText(content);
@@ -25,6 +31,15 @@ const ViewPaste = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-white">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
   if (!paste) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -66,7 +81,7 @@ const ViewPaste = () => {
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-slate-400 text-sm">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  {new Date(paste.createdAt).toDateString()}
+                  {paste.created_at ? new Date(paste.created_at).toDateString() : ''}
 
                 </div>
               </div>
