@@ -15,7 +15,7 @@ const ViewPaste = () => {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
-  const { selectedPaste: paste, loading } = useSelector((state) => state.paste);
+  const { selectedPaste: paste, loading, error } = useSelector((state) => state.paste);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -40,11 +40,31 @@ const ViewPaste = () => {
       </div>
     );
   }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-white">Error Loading Paste</h2>
+          <p className="text-slate-400">Please check if the paste ID is correct</p>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/")}
+            className="bg-gray-900/50 text-white border-purple-500/30 hover:bg-gray-500/50"
+          >
+            <ArrowLeft className="mr-2 w-4 h-4" /> Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   if (!paste) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-bold text-white">Paste Not Found</h2>
+          <p className="text-slate-400">The paste you're looking for doesn't exist or has been deleted</p>
           <Button
             variant="outline"
             onClick={() => navigate("/")}
