@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, ArrowLeft, Check, Calendar } from "lucide-react";
+import { Copy, ArrowLeft, Check, Calendar, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchPasteById } from "../features/PasteThunks";
+import { supabase } from "../lib/supabaseClient";
 
 const ViewPaste = () => {
   const [copiedId, setCopiedId] = useState(null);
