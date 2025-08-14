@@ -3,7 +3,7 @@ const Home = () => {
     <div className="min-h-screen w-full p-4 md:p-8 lg:p-12">
       <div className="max-w-4xl mx-auto text-center space-y-8">
         {/* Welcome Section */}
-        <div className="space-y-6">
+        {/* <div className="space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Welcome to SafeNote
           </h1>
@@ -11,7 +11,7 @@ const Home = () => {
             Create your own private workspace to store and share your notes securely. 
             No signup required – just pick a username and password!
           </p>
-        </div>
+        </div> */}
 
         {/* How it Works */}
         {/* <div className="grid md:grid-cols-3 gap-8 mt-16">
