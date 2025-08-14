@@ -13,14 +13,28 @@ export const fetchPastes = createAsyncThunk('pastes/fetchAll', async () => {
 export const addPaste = createAsyncThunk('pastes/add', async (paste) => {
   const { data, error } = await supabase
     .from('pastes')
-    .insert([{ title: paste.title, content: paste.content }])
+    .insert([{ title: paste.title, content: paste.content, username: paste.username }])
     .select()
     .single();
   if (error) throw error;
   return data;
 });
 
-export const updatePaste = createAsyncThunk('pastes/update', async (paste) => {
+export const updatePaste = createAsyncThunk('pastes/update', async ({ paste, password }) => {
+  // First verify the user has permission to edit this paste
+  if (paste.username) {
+    const { data: user, error: authError } = await supabase
+      .from('users')
+      .select('username')
+      .eq('username', paste.username)
+      .eq('password', password)
+      .single();
+
+    if (authError || !user) {
+      throw new Error('Invalid password. You cannot edit this paste.');
+    }
+  }
+
   const { data, error } = await supabase
     .from('pastes')
     .update({ title: paste.title, content: paste.content })
@@ -31,7 +45,21 @@ export const updatePaste = createAsyncThunk('pastes/update', async (paste) => {
   return data;
 });
 
-export const deletePaste = createAsyncThunk('pastes/delete', async (id) => {
+export const deletePaste = createAsyncThunk('pastes/delete', async ({ id, username, password }) => {
+  // First verify the user has permission to delete this paste
+  if (username) {
+    const { data: user, error: authError } = await supabase
+      .from('users')
+      .select('username')
+      .eq('username', username)
+      .eq('password', password)
+      .single();
+
+    if (authError || !user) {
+      throw new Error('Invalid password. You cannot delete this paste.');
+    }
+  }
+
   const { error } = await supabase
     .from('pastes')
     .delete()
@@ -40,7 +68,6 @@ export const deletePaste = createAsyncThunk('pastes/delete', async (id) => {
   return id;
 });
 
-// ...existing code...
 export const fetchPasteById = createAsyncThunk('pastes/fetchById', async (id) => {
   const { data, error } = await supabase
     .from('pastes')
@@ -50,6 +77,21 @@ export const fetchPasteById = createAsyncThunk('pastes/fetchById', async (id) =>
   if (error) {
     console.error('fetchPasteById error:', error);
     throw error;
+  }
+  return data;
+});
+
+// New thunk for verifying paste access
+export const verifyPasteAccess = createAsyncThunk('pastes/verifyAccess', async ({ username, password }) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('username')
+    .eq('username', username)
+    .eq('password', password)
+    .single();
+
+  if (error || !data) {
+    throw new Error('Invalid password');
   }
   return data;
 });

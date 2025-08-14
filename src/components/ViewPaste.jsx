@@ -64,6 +64,12 @@ const ViewPaste = () => {
   };
 
   const handleCopy = (content) => {
+    // Only allow copying if authenticated or if paste has no username (legacy)
+    if (paste.username && !isAuthenticated) {
+      toast.error("Please enter the password to copy this content");
+      return;
+    }
+    
     navigator.clipboard.writeText(content);
     setCopiedId("textarea");
     toast.success("Copied to clipboard");
@@ -217,9 +223,11 @@ const ViewPaste = () => {
             <div className="space-y-6">
               <div className="relative">
                 <Input
-                  value={paste.title}
+                  value={isAuthenticated || !paste.username ? paste.title : "Protected Content"}
                   disabled
-                  className="w-full bg-slate-900/50 border-slate-600/50 text-white text-lg font-semibold h-12 cursor-default focus:ring-0"
+                  className={`w-full bg-slate-900/50 border-slate-600/50 text-white text-lg font-semibold h-12 cursor-default focus:ring-0 ${
+                    paste.username && !isAuthenticated ? 'select-none' : ''
+                  }`}
                 />
               </div>
 
@@ -227,19 +235,31 @@ const ViewPaste = () => {
                 <textarea
                   value={paste.content}
                   disabled
-                  className="w-full min-h-[200px] md:min-h-[400px] lg:min-h-[600px] p-6 rounded-lg bg-slate-900/50 border border-slate-600/50 text-white text-medium leading-relaxed resize-none cursor-default focus:ring-0"
+                  className={`w-full min-h-[200px] md:min-h-[400px] lg:min-h-[600px] p-6 rounded-lg bg-slate-900/50 border border-slate-600/50 text-white text-medium leading-relaxed resize-none cursor-default focus:ring-0 ${
+                    paste.username && !isAuthenticated ? 'select-none pointer-events-none blur-sm' : ''
+                  }`}
                 />
-                <Button
-                  className="absolute top-3 right-3 bg-slate-700/50 hover:bg-slate-600/50 text-white transition-all duration-300"
-                  size="sm"
-                  onClick={() => handleCopy(paste.content)}
-                >
-                  {copiedId === "textarea" ? (
-                    <Check className="w-4 h-4" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
+                {(isAuthenticated || !paste.username) && (
+                  <Button
+                    className="absolute top-3 right-3 bg-slate-700/50 hover:bg-slate-600/50 text-white transition-all duration-300"
+                    size="sm"
+                    onClick={() => handleCopy(paste.content)}
+                  >
+                    {copiedId === "textarea" ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
+                {paste.username && !isAuthenticated && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <Lock className="w-8 h-8 text-slate-400 mx-auto" />
+                      <p className="text-slate-400 text-sm">Content is password protected</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

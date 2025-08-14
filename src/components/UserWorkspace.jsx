@@ -34,6 +34,13 @@ const UserWorkspace = () => {
           throw error;
         } else {
           setUserExists(true);
+          // Check if user is already authenticated in this session
+          const isAuth = sessionStorage.getItem(`safenote_auth_${username.toLowerCase()}`);
+          if (isAuth === 'true') {
+            setIsAuthenticated(true);
+            fetchUserPastes();
+            return;
+          }
         }
       } catch (error) {
         console.error('Error checking user:', error);
@@ -65,6 +72,8 @@ const UserWorkspace = () => {
       }
 
       setIsAuthenticated(true);
+      // Store authentication in session storage for this workspace
+      sessionStorage.setItem(`safenote_auth_${username.toLowerCase()}`, 'true');
       toast.success(`Welcome back, ${username}!`);
       fetchUserPastes();
     } catch (error) {
@@ -252,13 +261,26 @@ const UserWorkspace = () => {
           <p className="text-slate-400">
             Your private notes and messages - share this page with your password to give others access
           </p>
-          <Button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-          >
-            <Plus className="mr-2 w-4 h-4" />
-            {showCreateForm ? "Cancel" : "Create New Paste"}
-          </Button>
+          <div className="flex gap-3 justify-center">
+            <Button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+            >
+              <Plus className="mr-2 w-4 h-4" />
+              {showCreateForm ? "Cancel" : "Create New Paste"}
+            </Button>
+            <Button
+              onClick={() => {
+                sessionStorage.removeItem(`safenote_auth_${username.toLowerCase()}`);
+                setIsAuthenticated(false);
+                toast.success("Logged out successfully");
+              }}
+              variant="outline"
+              className="bg-gray-900/50 text-white border-slate-600/50 hover:bg-gray-800/50"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Create Form */}
