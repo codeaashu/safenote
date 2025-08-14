@@ -14,6 +14,25 @@ const CreateWorkspace = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const checkPasswordStrength = (password) => {
+    const minLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    return {
+      minLength,
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers,
+      hasSpecialChar,
+      isStrong: minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar
+    };
+  };
+
+  const passwordStrength = checkPasswordStrength(password);
+
   const handleCreateWorkspace = async (e) => {
     e.preventDefault();
     
@@ -27,8 +46,13 @@ const CreateWorkspace = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (!passwordStrength.isStrong) {
+      toast.error("Please use a stronger password with uppercase, lowercase, numbers, and special characters");
       return;
     }
 
@@ -100,6 +124,11 @@ const CreateWorkspace = () => {
             <p className="text-slate-400 mt-2">
               Great! This site doesn&apos;t exist, it can be yours!
             </p>
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-blue-400 text-sm">
+                💡 Tip: Use a unique, strong password to avoid browser security warnings
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateWorkspace} className="space-y-6">
@@ -124,10 +153,35 @@ const CreateWorkspace = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter a strong password"
                   className="w-full bg-slate-900/50 border-slate-600/50 text-white"
                   required
                 />
+                {password && (
+                  <div className="text-xs space-y-1">
+                    <p className="text-slate-400">Password requirements:</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className={`flex items-center gap-1 ${passwordStrength.minLength ? 'text-green-400' : 'text-slate-500'}`}>
+                        <span>{passwordStrength.minLength ? '✓' : '○'}</span> 8+ characters
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordStrength.hasUpperCase ? 'text-green-400' : 'text-slate-500'}`}>
+                        <span>{passwordStrength.hasUpperCase ? '✓' : '○'}</span> Uppercase
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordStrength.hasLowerCase ? 'text-green-400' : 'text-slate-500'}`}>
+                        <span>{passwordStrength.hasLowerCase ? '✓' : '○'}</span> Lowercase
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordStrength.hasNumbers ? 'text-green-400' : 'text-slate-500'}`}>
+                        <span>{passwordStrength.hasNumbers ? '✓' : '○'}</span> Numbers
+                      </div>
+                      <div className={`flex items-center gap-1 ${passwordStrength.hasSpecialChar ? 'text-green-400' : 'text-slate-500'}`}>
+                        <span>{passwordStrength.hasSpecialChar ? '✓' : '○'}</span> Special (!@#$)
+                      </div>
+                    </div>
+                    {passwordStrength.isStrong && (
+                      <p className="text-green-400 font-medium">✓ Strong password!</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
