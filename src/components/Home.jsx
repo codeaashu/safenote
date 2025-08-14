@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Copy, Trash, Pencil, Share, Eye, Check, Calendar } from "lucide-react";
+import { Copy, Trash, Pencil, Share, Eye, Check, Calendar, Lock } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useSearchParams, NavLink } from "react-router-dom";
+import PasswordPrompt from "./PasswordPrompt";
 
 
 import { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ const Home = () => {
   const [copiedId, setCopiedId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [passwordPrompt, setPasswordPrompt] = useState({ show: false, username: "", operation: "", onSuccess: null });
 
 
   const dispatch = useDispatch();
@@ -96,24 +98,95 @@ const Home = () => {
     );
   };
 
-  const handleCopy = (pasteId, content) => {
-    navigator.clipboard.writeText(content);
-    setCopiedId(pasteId);
-    toast.success("Content Copied to clipboard");
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = (pasteId, content, username = null) => {
+    if (username) {
+      // Password protected paste - require authentication
+      setPasswordPrompt({
+        show: true,
+        username,
+        operation: "copy",
+        onSuccess: () => {
+          navigator.clipboard.writeText(content);
+          setCopiedId(pasteId);
+          toast.success("Content Copied to clipboard");
+          setTimeout(() => setCopiedId(null), 2000);
+          setPasswordPrompt({ show: false, username: "", operation: "", onSuccess: null });
+        }
+      });
+    } else {
+      // Legacy paste or no username - allow direct copy
+      navigator.clipboard.writeText(content);
+      setCopiedId(pasteId);
+      toast.success("Content Copied to clipboard");
+      setTimeout(() => setCopiedId(null), 2000);
+    }
   };
 
-  const handleDelete = (pasteId) => {
-    setDeleteId(pasteId);
-    setIsDeleteOpen(true);
+  const handleDelete = (pasteId, username = null) => {
+    if (username) {
+      // Password protected paste - require authentication
+      setPasswordPrompt({
+        show: true,
+        username,
+        operation: "delete",
+        onSuccess: (password) => {
+          setDeleteId(pasteId);
+          setIsDeleteOpen(true);
+          setPasswordPrompt({ show: false, username: "", operation: "", onSuccess: null });
+          // Store password for the actual delete operation
+          sessionStorage.setItem(`temp_delete_auth_${pasteId}`, password);
+        }
+      });
+    } else {
+      // Legacy paste or no username - allow direct delete
+      setDeleteId(pasteId);
+      setIsDeleteOpen(true);
+    }
+  };
+
+  const handleEdit = (pasteId, username = null) => {
+    if (username) {
+      // Password protected paste - require authentication
+      setPasswordPrompt({
+        show: true,
+        username,
+        operation: "edit",
+        onSuccess: () => {
+          // Navigate to edit mode
+          setSearchParam({ pasteId });
+          setPasswordPrompt({ show: false, username: "", operation: "", onSuccess: null });
+        }
+      });
+    } else {
+      // Legacy paste or no username - allow direct edit
+      setSearchParam({ pasteId });
+    }
   };
 
   const confirmDelete = () => {
     if (deleteId) {
-      dispatch(deletePaste(deleteId)).then(() => {
-        setIsDeleteOpen(false);
-        setDeleteId(null);
-      });
+      const paste = pastes.find(p => p.id === deleteId);
+      if (paste && paste.username) {
+        // Get the stored password for this operation
+        const password = sessionStorage.getItem(`temp_delete_auth_${deleteId}`);
+        if (password) {
+          dispatch(deletePaste({ id: deleteId, username: paste.username, password })).then(() => {
+            setIsDeleteOpen(false);
+            setDeleteId(null);
+            sessionStorage.removeItem(`temp_delete_auth_${deleteId}`);
+          });
+        } else {
+          toast.error("Authentication expired. Please try again.");
+          setIsDeleteOpen(false);
+          setDeleteId(null);
+        }
+      } else {
+        // Legacy paste - no authentication needed
+        dispatch(deletePaste({ id: deleteId })).then(() => {
+          setIsDeleteOpen(false);
+          setDeleteId(null);
+        });
+      }
     }
   };
 
@@ -213,33 +286,44 @@ const Home = () => {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex place-items-start justify-between flex-col">
-                        <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors text-medium">
-                          {paste.title}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors text-medium">
+                            {paste.title}
+                          </h3>
+                          {paste.username && (
+                            <Lock className="w-3 h-3 text-purple-400" title="Password Protected" />
+                          )}
+                        </div>
                         <p className="text-sm  text-slate-400 mt-1">
                           {paste.content}
                         </p>
-                        <p className="text-xs flex items-center gap-2 text-slate-400 mt-1">
-                          <Calendar className="w-4 h-4" />
-                          {paste.created_at ? new Date(paste.created_at).toDateString() : ''}
-                        </p>
+                        <div className="flex items-center gap-4 text-xs text-slate-400 mt-1">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {paste.created_at ? new Date(paste.created_at).toDateString() : ''}
+                          </div>
+                          {paste.username && (
+                            <div className="text-purple-400 text-xs">
+                              Workspace: {paste.username}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-start gap-1">
                         <Button
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-yellow-400 transition-all duration-300"
+                          onClick={() => handleEdit(paste.id, paste.username)}
                         >
-                          <NavLink to={`/?pasteId=${paste?.id}`}>
-                            <Pencil className="w-4 h-4" />
-                          </NavLink>
+                          <Pencil className="w-4 h-4" />
                         </Button>
 
                         <Button
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-red-700 transition-all duration-300"
-                          onClick={() => handleDelete(paste.id)}
+                          onClick={() => handleDelete(paste.id, paste.username)}
                         >
                           <Trash className="w-4 h-4" />
                         </Button>
@@ -266,7 +350,7 @@ const Home = () => {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-green-500 transition-all duration-300"
-                          onClick={() => handleCopy(paste.id, paste.content)}
+                          onClick={() => handleCopy(paste.id, paste.content, paste.username)}
                         >
                           {copiedId === paste.id ? (
                             <Check className="w-4 h-4" />
@@ -283,6 +367,16 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Password Prompt Modal */}
+      {passwordPrompt.show && (
+        <PasswordPrompt
+          username={passwordPrompt.username}
+          operation={passwordPrompt.operation}
+          onSuccess={passwordPrompt.onSuccess}
+          onCancel={() => setPasswordPrompt({ show: false, username: "", operation: "", onSuccess: null })}
+        />
+      )}
 
       {/* Delete btn */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>

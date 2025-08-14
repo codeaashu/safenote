@@ -45,9 +45,14 @@ export const updatePaste = createAsyncThunk('pastes/update', async ({ paste, pas
   return data;
 });
 
-export const deletePaste = createAsyncThunk('pastes/delete', async ({ id, username, password }) => {
-  // First verify the user has permission to delete this paste
-  if (username) {
+export const deletePaste = createAsyncThunk('pastes/delete', async (payload) => {
+  // Handle both old format (just id) and new format (object with id, username, password)
+  const id = typeof payload === 'string' ? payload : payload.id;
+  const username = typeof payload === 'object' ? payload.username : null;
+  const password = typeof payload === 'object' ? payload.password : null;
+
+  // First verify the user has permission to delete this paste (if it has a username)
+  if (username && password) {
     const { data: user, error: authError } = await supabase
       .from('users')
       .select('username')
