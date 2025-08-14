@@ -6,6 +6,7 @@ import { Lock, Plus, Calendar, Eye, ArrowLeft, User, Copy, Trash, Pencil, Share,
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabaseClient";
+import { track } from '@vercel/analytics';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +82,12 @@ const UserWorkspace = () => {
 
       setIsAuthenticated(true);
       toast.success(`Welcome back, ${username}!`);
+      
+      // Track workspace login event
+      track('workspace_login', {
+        username: username.toLowerCase()
+      });
+      
       fetchUserPastes();
     } catch (error) {
       console.error('Error logging in:', error);
@@ -134,6 +141,12 @@ const UserWorkspace = () => {
       setNewPaste({ title: "", content: "" });
       setShowCreateForm(false);
       toast.success("Paste created successfully!");
+      
+      // Track paste creation event
+      track('paste_created', {
+        username: username.toLowerCase(),
+        pasteId: data.id
+      });
     } catch (error) {
       console.error('Error creating paste:', error);
       toast.error("Failed to create paste");

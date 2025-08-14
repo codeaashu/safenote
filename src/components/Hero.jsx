@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { track } from '@vercel/analytics';
 
 const Hero = () => {
   const [username, setUsername] = useState("");
@@ -13,6 +14,12 @@ const Hero = () => {
       return;
     }
     const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+    
+    // Track username search event
+    track('username_search', {
+      username: cleanUsername
+    });
+    
     navigate(`/${cleanUsername}`);
   };
 

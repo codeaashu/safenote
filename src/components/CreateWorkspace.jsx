@@ -6,6 +6,7 @@ import { User, Lock, ArrowLeft } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabaseClient";
+import { track } from '@vercel/analytics';
 
 const CreateWorkspace = () => {
   const { username } = useParams();
@@ -97,6 +98,12 @@ const CreateWorkspace = () => {
 
       console.log('User created successfully:', data);
       toast.success("Workspace created successfully!");
+      
+      // Track workspace creation event
+      track('workspace_created', {
+        username: username.toLowerCase()
+      });
+      
       navigate(`/${username}`);
     } catch (error) {
       console.error('Error creating workspace:', error);
