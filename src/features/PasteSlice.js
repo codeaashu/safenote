@@ -65,7 +65,7 @@ export const pasteSlice = createSlice({
       .addCase(updatePaste.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
-        toast.error(action.error.message || 'Failed to update paste');
+        toast.error('Failed to update paste');
       })
 
       // Delete paste
@@ -81,7 +81,7 @@ export const pasteSlice = createSlice({
       .addCase(deletePaste.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
-        toast.error(action.error.message || 'Failed to delete paste');
+        toast.error('Failed to delete paste');
       })
 
       // Fetch paste by id

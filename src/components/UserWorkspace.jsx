@@ -2,10 +2,20 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Plus, Calendar, Eye, ArrowLeft, User } from "lucide-react";
+import { Lock, Plus, Calendar, Eye, ArrowLeft, User, Copy, Trash, Pencil, Share, Check } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabaseClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const UserWorkspace = () => {
   const { username } = useParams();
@@ -16,7 +26,12 @@ const UserWorkspace = () => {
   const [loading, setLoading] = useState(true);
   const [pastes, setPastes] = useState([]);
   const [newPaste, setNewPaste] = useState({ title: "", content: "" });
+  const [editingPaste, setEditingPaste] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const checkUser = async () => {
@@ -34,13 +49,6 @@ const UserWorkspace = () => {
           throw error;
         } else {
           setUserExists(true);
-          // Check if user is already authenticated in this session
-          const isAuth = sessionStorage.getItem(`safenote_auth_${username.toLowerCase()}`);
-          if (isAuth === 'true') {
-            setIsAuthenticated(true);
-            fetchUserPastes();
-            return;
-          }
         }
       } catch (error) {
         console.error('Error checking user:', error);
@@ -72,8 +80,6 @@ const UserWorkspace = () => {
       }
 
       setIsAuthenticated(true);
-      // Store authentication in session storage for this workspace
-      sessionStorage.setItem(`safenote_auth_${username.toLowerCase()}`, 'true');
       toast.success(`Welcome back, ${username}!`);
       fetchUserPastes();
     } catch (error) {
@@ -135,6 +141,62 @@ const UserWorkspace = () => {
       setLoading(false);
     }
   };
+
+  const handleCopy = (pasteId, content) => {
+    navigator.clipboard.writeText(content);
+    setCopiedId(pasteId);
+    toast.success("Content copied to clipboard");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDelete = (pasteId) => {
+    setDeleteId(pasteId);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      const { error } = await supabase
+        .from('pastes')
+        .delete()
+        .eq('id', deleteId);
+
+      if (error) throw error;
+
+      setPastes(pastes.filter(p => p.id !== deleteId));
+      toast.success("Paste deleted successfully!");
+    } catch (error) {
+      console.error('Error deleting paste:', error);
+      toast.error("Failed to delete paste");
+    } finally {
+      setIsDeleteOpen(false);
+      setDeleteId(null);
+    }
+  };
+
+  const ShareMenu = ({ paste }) => {
+    const shareUrl = `${window.location.origin}/paste/${paste.id}`;
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied to clipboard!");
+    };
+    return (
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-8 w-8 p-0 hover:text-blue-400 transition-all duration-300"
+        onClick={copyToClipboard}
+      >
+        <Share className="w-4 h-4" />
+      </Button>
+    );
+  };
+
+  const filteredPastes = pastes.filter((paste) =>
+    paste.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -261,26 +323,13 @@ const UserWorkspace = () => {
           <p className="text-slate-400">
             Your private notes and messages - share this page with your password to give others access
           </p>
-          <div className="flex gap-3 justify-center">
-            <Button
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-            >
-              <Plus className="mr-2 w-4 h-4" />
-              {showCreateForm ? "Cancel" : "Create New Paste"}
-            </Button>
-            <Button
-              onClick={() => {
-                sessionStorage.removeItem(`safenote_auth_${username.toLowerCase()}`);
-                setIsAuthenticated(false);
-                toast.success("Logged out successfully");
-              }}
-              variant="outline"
-              className="bg-gray-900/50 text-white border-slate-600/50 hover:bg-gray-800/50"
-            >
-              Logout
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+          >
+            <Plus className="mr-2 w-4 h-4" />
+            {showCreateForm ? "Cancel" : "Create New Paste"}
+          </Button>
         </div>
 
         {/* Create Form */}
@@ -319,22 +368,33 @@ const UserWorkspace = () => {
 
         {/* Recent Pastes */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-white">Recent Pastes</h2>
-          {pastes.length === 0 ? (
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-2xl font-bold text-white">Recent Pastes</h2>
+            <Input
+              placeholder="Search pastes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full sm:w-64 bg-slate-900/50 border-slate-600/50 text-white placeholder-slate-400"
+            />
+          </div>
+          
+          {filteredPastes.length === 0 ? (
             <Card className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-xl">
               <CardContent className="text-center py-12">
-                <p className="text-slate-400">No pastes yet. Create your first paste above!</p>
+                <p className="text-slate-400">
+                  {pastes.length === 0 ? "No pastes yet. Create your first paste above!" : "No pastes match your search."}
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4">
-              {pastes.map((paste) => (
+              {filteredPastes.map((paste) => (
                 <Card key={paste.id} className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-300">
                   <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-2">{paste.title}</h3>
-                        <p className="text-slate-400 text-sm mb-2 line-clamp-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-white mb-2 truncate">{paste.title}</h3>
+                        <p className="text-slate-400 text-sm mb-3 line-clamp-2">
                           {paste.content.substring(0, 100)}...
                         </p>
                         <div className="flex items-center gap-2 text-slate-500 text-xs">
@@ -342,15 +402,53 @@ const UserWorkspace = () => {
                           {new Date(paste.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <Button
-                        onClick={() => navigate(`/paste/${paste.id}`)}
-                        variant="outline"
-                        size="sm"
-                        className="bg-slate-700/50 text-white border-slate-600/50 hover:bg-slate-600/50"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
+                      <div className="flex items-start gap-1 ml-4">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:text-green-400 transition-all duration-300"
+                          onClick={() => handleCopy(paste.id, paste.content)}
+                          title="Copy content"
+                        >
+                          {copiedId === paste.id ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:text-blue-400 transition-all duration-300"
+                          onClick={() => navigate(`/paste/${paste.id}`)}
+                          title="View paste"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+
+                        <ShareMenu paste={paste} />
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:text-yellow-400 transition-all duration-300"
+                          onClick={() => setEditingPaste(paste)}
+                          title="Edit paste"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 hover:text-red-400 transition-all duration-300"
+                          onClick={() => handleDelete(paste.id)}
+                          title="Delete paste"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -358,6 +456,29 @@ const UserWorkspace = () => {
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+          <AlertDialogContent className="bg-slate-900 border border-slate-700 shadow-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-400">
+                This action cannot be undone. This will permanently delete your paste.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-slate-800 text-white border-slate-600 hover:bg-slate-700">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-500 text-white hover:bg-red-600"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
