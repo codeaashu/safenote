@@ -1,4 +1,4 @@
-# Creating Transparent PWA Icons
+<!-- # Creating Transparent PWA Icons
 
 ## Problem
 Your PWA icons currently show white/black backgrounds on mobile devices.
@@ -39,4 +39,4 @@ After making changes:
 1. `npm run build`
 2. `git add . && git commit -m "Fix PWA transparent icons"`
 3. `git push`
-4. Test on mobile device
+4. Test on mobile device -->

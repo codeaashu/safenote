@@ -14,32 +14,30 @@ export default defineConfig({
         short_name: 'SafeNote',
         description: 'The safest way to store and share your private notes & messages with password protection',
         theme_color: '#1e293b',
-        background_color: 'transparent',
+        background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
         icons: [
           {
-            src: 'safenotewhite.png',
+            src: 'safenote.png',
             sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
+            type: 'image/png'
           },
           {
-            src: 'safenotewhite.png',
+            src: 'safenote.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'safenote.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'safenoteblack.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: 'safenoteblack.png',
+            src: 'safenote.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -52,7 +50,7 @@ export default defineConfig({
             short_name: 'New Workspace',
             description: 'Create a new private workspace',
             url: '/',
-            icons: [{ src: 'safenotewhite.png', sizes: '192x192' }]
+            icons: [{ src: 'safenote.png', sizes: '192x192' }]
           }
         ]
       },
