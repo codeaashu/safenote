@@ -21,15 +21,14 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'favicon.ico',
-            sizes: '16x16 32x32 48x48',
-            type: 'image/x-icon'
+            src: 'safenote.png',
+            sizes: '192x192',
+            type: 'image/png'
           },
           {
             src: 'safenote.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
+            sizes: '512x512',
+            type: 'image/png'
           },
           {
             src: 'safenote.png',
@@ -38,13 +37,7 @@ export default defineConfig({
             purpose: 'any'
           },
           {
-            src: 'safenotewhite.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: 'safenotewhite.png',
+            src: 'safenote.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'

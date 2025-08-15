@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Maskable Icon</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 1px solid #ccc; margin: 10px 0; }
+        .info { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>SafeNote Maskable Icon Generator</h1>
+    
+    <div class="info">
+        <h3>📱 Maskable Icon Requirements:</h3>
+        <ul>
+            <li><strong>Safe Zone:</strong> At least 10% padding on all sides</li>
+            <li><strong>Content Area:</strong> Logo should fit in center 80% of the icon</li>
+            <li><strong>Background:</strong> Should work on any background (use contrasting colors)</li>
+        </ul>
+    </div>
+
+    <div>
+        <label>Select original SafeNote icon:</label>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div>
+        <label>Background Color:</label>
+        <select id="bgColor">
+            <option value="#000000">Black</option>
+            <option value="#1e293b" selected>Dark Blue (Theme)</option>
+            <option value="#ffffff">White</option>
+            <option value="#6366f1">Purple</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Padding (%):</label>
+        <input type="range" id="padding" min="10" max="30" value="15" oninput="updatePadding()">
+        <span id="paddingValue">15%</span>
+    </div>
+
+    <canvas id="canvas" width="512" height="512"></canvas>
+
+    <div>
+        <button onclick="generateIcon()">Generate Maskable Icon</button>
+        <button onclick="downloadIcon()">Download Icon</button>
+        <button onclick="testMasks()">Test with Masks</button>
+    </div>
+
+    <div id="testArea" style="display:none;">
+        <h3>🔍 Test Different Masks:</h3>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div>
+                <p>Circle Mask</p>
+                <canvas id="circleTest" width="100" height="100" style="border-radius: 50%;"></canvas>
+            </div>
+            <div>
+                <p>Rounded Square</p>
+                <canvas id="roundedTest" width="100" height="100" style="border-radius: 20%;"></canvas>
+            </div>
+            <div>
+                <p>Square</p>
+                <canvas id="squareTest" width="100" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let originalImage = null;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        generateIcon();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function updatePadding() {
+            const value = document.getElementById('padding').value;
+            document.getElementById('paddingValue').textContent = value + '%';
+            if (originalImage) generateIcon();
+        }
+
+        function generateIcon() {
+            if (!originalImage) return;
+
+            const padding = parseInt(document.getElementById('padding').value);
+            const bgColor = document.getElementById('bgColor').value;
+            
+            // Clear canvas and set background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            // Calculate dimensions with padding
+            const paddingPx = (512 * padding) / 100;
+            const logoSize = 512 - (paddingPx * 2);
+            
+            // Draw the original image centered with padding
+            ctx.drawImage(originalImage, paddingPx, paddingPx, logoSize, logoSize);
+            
+            // Draw safe zone guides
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 5]);
+            ctx.strokeRect(paddingPx, paddingPx, logoSize, logoSize);
+            
+            // Draw center guides
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(256, 0);
+            ctx.lineTo(256, 512);
+            ctx.moveTo(0, 256);
+            ctx.lineTo(512, 256);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function downloadIcon() {
+            if (!originalImage) {
+                alert('Please select an image first!');
+                return;
+            }
+
+            // Create a clean version without guides
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 512;
+            tempCanvas.height = 512;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            const padding = parseInt(document.getElementById('padding').value);
+            const bgColor = document.getElementById('bgColor').value;
+            const paddingPx = (512 * padding) / 100;
+            const logoSize = 512 - (paddingPx * 2);
+            
+            tempCtx.fillStyle = bgColor;
+            tempCtx.fillRect(0, 0, 512, 512);
+            tempCtx.drawImage(originalImage, paddingPx, paddingPx, logoSize, logoSize);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = 'safenote-maskable.png';
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        }
+
+        function testMasks() {
+            if (!originalImage) return;
+            
+            document.getElementById('testArea').style.display = 'block';
+            
+            const tests = ['circleTest', 'roundedTest', 'squareTest'];
+            tests.forEach(testId => {
+                const testCanvas = document.getElementById(testId);
+                const testCtx = testCanvas.getContext('2d');
+                
+                // Scale down the main canvas to 100x100
+                testCtx.drawImage(canvas, 0, 0, 100, 100);
+            });
+        }
+    </script>
+</body>
+</html>
