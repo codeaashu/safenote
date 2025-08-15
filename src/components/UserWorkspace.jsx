@@ -155,6 +155,47 @@ const UserWorkspace = () => {
     }
   };
 
+  const handleUpdatePaste = async (e) => {
+    e.preventDefault();
+    
+    if (!editingPaste.title || !editingPaste.content) {
+      toast.error("Please fill in both title and content");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('pastes')
+        .update({
+          title: editingPaste.title,
+          content: editingPaste.content,
+        })
+        .eq('id', editingPaste.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update the paste in the local state
+      setPastes(pastes.map(p => p.id === editingPaste.id ? data : p));
+      setEditingPaste(null);
+      toast.success("Paste updated successfully!");
+      
+      // Track paste update event
+      track('paste_updated', {
+        username: username.toLowerCase(),
+        pasteId: data.id
+      });
+    } catch (error) {
+      console.error('Error updating paste:', error);
+      toast.error("Failed to update paste");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCopy = (pasteId, content) => {
     navigator.clipboard.writeText(content);
     setCopiedId(pasteId);
@@ -337,7 +378,10 @@ const UserWorkspace = () => {
             Your private notes and messages - share this page with your password to give others access
           </p>
           <Button
-            onClick={() => setShowCreateForm(!showCreateForm)}
+            onClick={() => {
+              setShowCreateForm(!showCreateForm);
+              setEditingPaste(null); // Close edit form when creating
+            }}
             className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
           >
             <Plus className="mr-2 w-4 h-4" />
@@ -374,6 +418,50 @@ const UserWorkspace = () => {
                 >
                   {loading ? "Creating..." : "Create Paste"}
                 </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Edit Form */}
+        {editingPaste && (
+          <Card className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-xl text-white">Edit Paste</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdatePaste} className="space-y-4">
+                <Input
+                  value={editingPaste.title}
+                  onChange={(e) => setEditingPaste({ ...editingPaste, title: e.target.value })}
+                  placeholder="Enter paste title..."
+                  className="w-full bg-slate-900/50 border-slate-600/50 text-white"
+                  required
+                />
+                <textarea
+                  value={editingPaste.content}
+                  onChange={(e) => setEditingPaste({ ...editingPaste, content: e.target.value })}
+                  placeholder="Enter your content here..."
+                  className="w-full min-h-[200px] p-4 rounded-lg bg-slate-900/50 border border-slate-600/50 text-white resize-none"
+                  required
+                />
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPaste(null)}
+                    className="flex-1 bg-gray-900/50 text-white border-slate-600/50 hover:bg-gray-800/50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
+                  >
+                    {loading ? "Updating..." : "Update Paste"}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -446,7 +534,10 @@ const UserWorkspace = () => {
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-yellow-400 transition-all duration-300"
-                          onClick={() => setEditingPaste(paste)}
+                          onClick={() => {
+                            setEditingPaste(paste);
+                            setShowCreateForm(false); // Close create form when editing
+                          }}
                           title="Edit paste"
                         >
                           <Pencil className="w-4 h-4" />
