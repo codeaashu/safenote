@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 import PageNotFound from "./components/PageNotFound";
 import UserWorkspace from "./components/UserWorkspace";
 import CreateWorkspace from "./components/CreateWorkspace";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 
 const router = createBrowserRouter([
@@ -63,7 +64,8 @@ const router = createBrowserRouter([
 function App() {
   return (
     <>
-    <RouterProvider router={router}/>
+      <RouterProvider router={router}/>
+      <PWAInstallPrompt />
     </>
   );
 }
