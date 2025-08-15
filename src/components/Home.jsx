@@ -47,12 +47,12 @@ const Home = () => {
           </div>
         </div> */}
         <div className="p-6 bg-slate-800/30 rounded-2xl border border-slate-700/50">
-          <h2 className="text-2xl font-bold text-white mb-4">Ready to get started?</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">F*ck Authentication</h2>
           <p className="text-slate-400 mb-4">
-            Use the username input above to create your private workspace or access an existing one.
+            No Logins. No Signups. Just secure & shareable notes!
           </p>
           <p className="text-sm text-slate-500">
-            Example: Try visiting safenote.vercel.app/demo to see how it works!
+            Even SafeNote Can’t See Your Notes. Your data is fully encrypted and only accessible by you.
           </p>
         </div>
       </div>

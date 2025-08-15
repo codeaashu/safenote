@@ -10,8 +10,13 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           <NavLink
             to="/"
-            className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent"
+            className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 bg-clip-text text-transparent"
           >
+            <img 
+              src="/safenote.png" 
+              alt="SafeNote Logo" 
+              className="h-8 w-8"
+            />
             SafeNote
           </NavLink>
           <div className="flex items-center gap-6">

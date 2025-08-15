@@ -6,6 +6,11 @@ const Footer = () => {
     { icon: <Twitter className="h-5 w-5" />, href: "https://twitter.com/warrior_aashuu", label: "Twitter" },
     { icon: <Github className="h-5 w-5" />, href: "https://github.com/codeaashu", label: "GitHub" },
     { icon: <Linkedin className="h-5 w-5" />, href: "https://www.linkedin.com/in/ashutoshkumaraashu/", label: "LinkedIn" },
+    { 
+      icon: <img src="/DevDisplay.png" alt="DevDisplay" className="h-5 w-5" />, 
+      href: "https://www.devdisplay.org/profile/codeaashu", 
+      label: "DevDisplay" 
+    },
   ];
 
   return (

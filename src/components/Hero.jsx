@@ -32,12 +32,12 @@ const Hero = () => {
   return (
     <div className="container mx-auto px-4 py-16 text-center">
       <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 bg-clip-text text-transparent">
-        SafeNote – The Safest Way to Store and Share Your Private Notes & Messages!
+        {/* The Most Secure Way to Save and Share Your Private Notes & Messages! */}
+        The Safest Way to Store and Share Your Private Notes & Messages!
       </h1>
 
       <p className="text-xl md:text-xl text-muted-foreground mb-8">
-        Create your own private workspace with just a username and password. 
-        No signup required – just secure, shareable notes!
+        Create your own private workspace with just a username and password.
       </p>
 
       {/* Quick Access */}
@@ -45,7 +45,7 @@ const Hero = () => {
         <div className="flex gap-2">
           <Input
             type="text"
-            placeholder="Enter any username, e.g. safenote.vercel.app/john"
+            placeholder="Enter your username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -72,7 +72,7 @@ const Hero = () => {
           </div>
           <h3 className="text-lg font-semibold text-white">Username Based</h3>
           <p className="text-slate-400 text-sm">
-            No email required. Just pick a username and you&apos;re ready to go!
+            No email or number required. Just pick a username and you&apos;re ready to go!
           </p>
         </div>
         <div className="text-center space-y-3">
