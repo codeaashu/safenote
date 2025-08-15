@@ -46,8 +46,8 @@ const ViewPaste = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Error Loading Paste</h2>
-          <p className="text-slate-400">Please check if the paste ID is correct</p>
+          <h2 className="text-2xl font-bold text-white">Error Loading Notes</h2>
+          <p className="text-slate-400">Please check if the note ID is correct</p>
           <Button
             variant="outline"
             onClick={() => navigate("/")}
@@ -64,8 +64,8 @@ const ViewPaste = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Paste Not Found</h2>
-          <p className="text-slate-400">The paste you're looking for doesn't exist or has been deleted</p>
+          <h2 className="text-2xl font-bold text-white">Note Not Found</h2>
+          <p className="text-slate-400">The note you're looking for doesn't exist or has been deleted</p>
           <Button
             variant="outline"
             onClick={() => navigate("/")}
@@ -95,7 +95,7 @@ const ViewPaste = () => {
                 </Button>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient w-full text-center">
-                View Paste
+                View Note
               </h1>
 
               {/* Metadata */}

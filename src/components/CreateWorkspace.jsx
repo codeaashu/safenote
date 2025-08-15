@@ -133,7 +133,7 @@ const CreateWorkspace = () => {
             </p>
             <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <p className="text-blue-400 text-sm">
-                💡 Tip: Use a unique, strong password to avoid browser security warnings
+                💡 Tip: Use a unique, strong password! <br />A strong password is your first line of trust.
               </p>
             </div>
           </CardHeader>

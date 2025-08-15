@@ -377,30 +377,53 @@ const UserWorkspace = () => {
           <p className="text-slate-400">
             Your private notes and messages - share this page with your password to give others access
           </p>
-          <Button
-            onClick={() => {
-              setShowCreateForm(!showCreateForm);
-              setEditingPaste(null); // Close edit form when creating
-            }}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-          >
-            <Plus className="mr-2 w-4 h-4" />
-            {showCreateForm ? "Cancel" : "Create New Paste"}
-          </Button>
+          
+          {/* Copy Page Link Button */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex items-center gap-2 bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-600/30">
+              <span className="text-slate-300 text-sm font-mono">
+                {window.location.origin}/{username}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0 hover:text-blue-400 transition-all duration-300"
+                onClick={() => {
+                  const pageUrl = `${window.location.origin}/${username}`;
+                  navigator.clipboard.writeText(pageUrl);
+                  toast.success("Workspace link copied to clipboard!");
+                }}
+                title="Copy workspace link"
+              >
+                <Copy className="w-3 h-3" />
+              </Button>
+            </div>
+            
+            <Button
+              onClick={() => {
+                setShowCreateForm(!showCreateForm);
+                setEditingPaste(null); // Close edit form when creating
+              }}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+            >
+              <Plus className="mr-2 w-4 h-4" />
+              {showCreateForm ? "Cancel" : "Create New Notes"}
+            </Button>
+          </div>
         </div>
 
         {/* Create Form */}
         {showCreateForm && (
           <Card className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-2xl">
             <CardHeader>
-              <CardTitle className="text-xl text-white">Create New Paste</CardTitle>
+              <CardTitle className="text-xl text-white">Create New Notes</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCreatePaste} className="space-y-4">
                 <Input
                   value={newPaste.title}
                   onChange={(e) => setNewPaste({ ...newPaste, title: e.target.value })}
-                  placeholder="Enter paste title..."
+                  placeholder="Enter notes title..."
                   className="w-full bg-slate-900/50 border-slate-600/50 text-white"
                   required
                 />
@@ -416,7 +439,7 @@ const UserWorkspace = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
                 >
-                  {loading ? "Creating..." : "Create Paste"}
+                  {loading ? "Creating..." : "Create Notes"}
                 </Button>
               </form>
             </CardContent>
@@ -427,14 +450,14 @@ const UserWorkspace = () => {
         {editingPaste && (
           <Card className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-2xl">
             <CardHeader>
-              <CardTitle className="text-xl text-white">Edit Paste</CardTitle>
+              <CardTitle className="text-xl text-white">Edit Notes</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdatePaste} className="space-y-4">
                 <Input
                   value={editingPaste.title}
                   onChange={(e) => setEditingPaste({ ...editingPaste, title: e.target.value })}
-                  placeholder="Enter paste title..."
+                  placeholder="Enter notes title..."
                   className="w-full bg-slate-900/50 border-slate-600/50 text-white"
                   required
                 />
@@ -459,7 +482,7 @@ const UserWorkspace = () => {
                     disabled={loading}
                     className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white"
                   >
-                    {loading ? "Updating..." : "Update Paste"}
+                    {loading ? "Updating..." : "Update Notes"}
                   </Button>
                 </div>
               </form>
@@ -470,9 +493,9 @@ const UserWorkspace = () => {
         {/* Recent Pastes */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 className="text-2xl font-bold text-white">Recent Pastes</h2>
+            <h2 className="text-2xl font-bold text-white">Recent Notes</h2>
             <Input
-              placeholder="Search pastes..."
+              placeholder="Search notes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full sm:w-64 bg-slate-900/50 border-slate-600/50 text-white placeholder-slate-400"
@@ -483,7 +506,7 @@ const UserWorkspace = () => {
             <Card className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-xl">
               <CardContent className="text-center py-12">
                 <p className="text-slate-400">
-                  {pastes.length === 0 ? "No pastes yet. Create your first paste above!" : "No pastes match your search."}
+                  {pastes.length === 0 ? "No notes yet. Create your first note above!" : "No notes match your search."}
                 </p>
               </CardContent>
             </Card>
@@ -523,7 +546,7 @@ const UserWorkspace = () => {
                           variant="ghost"
                           className="h-8 w-8 p-0 hover:text-blue-400 transition-all duration-300"
                           onClick={() => navigate(`/paste/${paste.id}`)}
-                          title="View paste"
+                          title="View note"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -567,7 +590,7 @@ const UserWorkspace = () => {
             <AlertDialogHeader>
               <AlertDialogTitle className="text-white">Are you sure?</AlertDialogTitle>
               <AlertDialogDescription className="text-slate-400">
-                This action cannot be undone. This will permanently delete your paste.
+                This action cannot be undone. This will permanently delete your note.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -47,7 +47,7 @@ const Home = () => {
           </div>
         </div> */}
         <div className="p-6 bg-slate-800/30 rounded-2xl border border-slate-700/50">
-          <h2 className="text-2xl font-bold text-white mb-4">F*ck Authentication</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">F*ck Authentication!</h2>
           <p className="text-slate-400 mb-4">
             No Logins. No Signups. Just secure & shareable notes!
           </p>
