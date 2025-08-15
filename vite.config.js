@@ -14,7 +14,7 @@ export default defineConfig({
         short_name: 'SafeNote',
         description: 'The safest way to store and share your private notes & messages with password protection',
         theme_color: '#1e293b',
-        background_color: '#0f172a',
+        background_color: 'transparent',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
