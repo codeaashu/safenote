@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'safenote.png', 'safenoteblack.png', 'safenotewhite.png'],
+      includeAssets: ['favicon.ico', 'safenote.png', 'safenoteblack.png', 'safenotewhite.png', 'safenoteicon.png'],
       manifest: {
         name: 'SafeNote - Private Notes & Messages',
         short_name: 'SafeNote',
@@ -21,23 +21,23 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'safenote.png',
+            src: 'safenoteicon.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'safenote.png',
+            src: 'safenoteicon.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: 'safenote.png',
+            src: 'safenoteicon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: 'safenote.png',
+            src: 'safenoteicon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -50,7 +50,7 @@ export default defineConfig({
             short_name: 'New Workspace',
             description: 'Create a new private workspace',
             url: '/',
-            icons: [{ src: 'safenote.png', sizes: '192x192' }]
+            icons: [{ src: 'safenoteicon.png', sizes: '192x192' }]
           }
         ]
       },
