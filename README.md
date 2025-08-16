@@ -43,6 +43,7 @@
 
 ---
 
+<!--
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -87,6 +88,7 @@ Run the SQL scripts in your Supabase dashboard:
 2. Run `enable-rls-properly.sql` for security policies
 
 ---
+-->
 
 ## 🏗️ Tech Stack
 
