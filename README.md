@@ -3,26 +3,9 @@
 
 `The safest workspace to store and share your private notes & messages!`<br>
 
-<h2 align="center"> Connect ▸ Collab ▸ Code ▸ Create ▸ Conquer </h2>
+<h1 align="center"><a href="https://www.safenote.me/"><strong>✦ www.safenote.me ✦</strong></a></h1>
 
 <a href="https://www.producthunt.com/products/safenote-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-safenote&#0045;2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1005805&theme=dark&t=1755326981097" alt="SafeNote - Safest&#0032;workspace&#0032;to&#0032;save&#0032;and&#0032;share&#0032;your&#0032;notes&#0032;&#0038;&#0032;messages&#0033; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-
-# 🔐 SafeNote
-
-<div align="center">
-
-![SafeNote Banner](./public/safenote.png)
-
-**The safest workspace to store and share your private notes & messages!**
-
-*Create password-protected workspaces and share sensitive information safely*
-
-[![Website](https://img.shields.io/badge/🌐-safenote.me-blue?style=for-the-badge)](https://www.safenote.me/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
-[![Made with React](https://img.shields.io/badge/Made%20with-React-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Ready-brightgreen?style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
-
-</div>
 
 ---
 
