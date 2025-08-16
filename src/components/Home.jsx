@@ -52,7 +52,7 @@ const Home = () => {
             No Logins. No Signups. Just secure & shareable notes!
           </p>
           <p className="text-sm text-slate-500">
-            Even SafeNote Can’t See Your Notes. Your data is fully encrypted and only accessible by you.
+          Your data is fully encrypted and only accessible by you.
           </p>
         </div>
       </div>
