@@ -34,7 +34,7 @@ const Hero = () => {
     <div className="container mx-auto px-4 py-16 text-center">
       <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 bg-clip-text text-transparent">
         {/* The Most Secure Way to Save and Share Your Private Notes & Messages! */}
-        The Safest Way to Store and Share Your Private Notes & Messages!
+        The safest workspace to store and share your private notes & messages!
       </h1>
 
       <p className="text-xl md:text-xl text-muted-foreground mb-8">
