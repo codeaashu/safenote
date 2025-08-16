@@ -34,7 +34,7 @@ const Footer = () => {
         <div className="text-sm text-slate-400">
           Built by{' '}
           <a
-            href="https://github.com/codeaashu"
+            href="https://www.ashutoshkumar.me/"
             target="_blank"
             rel="noreferrer"
             className="text-blue-600 hover:text-blue-400 transition-colors"
