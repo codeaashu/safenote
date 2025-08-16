@@ -4,28 +4,6 @@ Save and organize your content effortlessly. Built with modern web technologies.
 
 ## Check Out: [SafeNote](https://safenote.vercel.app/)
 
-## Screenshots
-
-### Home Page
-
-![Home](/src/assets/screenshots/page-one.png)
-
-### Create Paste
-
-![Create](/src/assets/screenshots/page-two.png)
-
-### Delete Paste
-
-![Delete](/src/assets/screenshots/page-three.png)
-
-### View Paste
-
-![View](/src/assets/screenshots/page-four.png)
-
-### Update Paste
-
-![Update](/src/assets/screenshots/page-five.png)
-
 ## Features
 
 - **Create Pastes:** Save text content with custom titles
