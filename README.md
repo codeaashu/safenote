@@ -125,6 +125,7 @@ Run the SQL scripts in your Supabase dashboard:
 - **📦 PostCSS** - CSS transformations
 - **🔧 Autoprefixer** - Automatic CSS vendor prefixing
 
+<!--
 ---
 
 ## 📁 Project Structure
@@ -163,9 +164,9 @@ safenote/
 └── 📄 vercel.json               # Deployment configuration
 ```
 
----
+--- -->
 
-## 🛠️ Available Scripts
+<!-- ## 🛠️ Available Scripts
 
 ```bash
 # Development
@@ -240,6 +241,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Supabase** - For the robust backend infrastructure
 - **Vercel** - For seamless deployment and analytics
 - **Tailwind CSS** - For the utility-first styling approach
+-->
 
 ---
 
@@ -247,16 +249,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 🐛 **Bug Reports**: [Create an Issue](https://github.com/codeaashu/safenote/issues)
 - 💡 **Feature Requests**: [Create an Issue](https://github.com/codeaashu/safenote/issues)
-- 📧 **Contact**: [Your Contact Info]
 
 ---
 
+<h1 align="center"><img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Glowing%20Star.png" alt="Glowing Star" width="25" height="25" /> Give us a Star and let's make magic! <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Glowing%20Star.png" alt="Glowing Star" width="25" height="25" /></h1>
+
 <div align="center">
-
-**⭐ Star this repository if you find it helpful!**
-
-**Made with ❤️ by the SafeNote Team**
-
-[🌐 Website](https://www.safenote.me/) • [📂 Repository](https://github.com/codeaashu/safenote) • [🐛 Issues](https://github.com/codeaashu/safenote/issues)
-
+    <a href="#top">
+        <img src="https://img.shields.io/badge/Back%20to%20Top-000000?style=for-the-badge&logo=github&logoColor=white" alt="Back to Top">
+    </a><br>
+     <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Mirror%20Ball.png" alt="Mirror Ball" width="150" height="150" />
 </div>
+
