@@ -1,8 +1,8 @@
 # SafeNote
 
-Save and organize your content effortlessly. Built with modern web technologies.
+The Safest Way to Store and Share Your Private Notes & Messages!
 
-## Check Out: [SafeNote](https://safenote.vercel.app/)
+## Check Out: [SafeNote](https://safenote.me/)
 
 ## Features
 
