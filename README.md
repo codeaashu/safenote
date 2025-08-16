@@ -4,7 +4,7 @@
 
 ![SafeNote Banner](./public/safenote.png)
 
-**The Ultimate Secure Platform for Private Notes & Messages**
+**The safest workspace to store and share your private notes & messages!**
 
 *Create password-protected workspaces and share sensitive information safely*
 
