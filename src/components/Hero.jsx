@@ -1,9 +1,10 @@
-import { ArrowRight, Users, Lock, Share } from "lucide-react";
+import { Users, Lock, Share } from "lucide-react";
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { track } from '@vercel/analytics';
+import RainbowButton from './RainbowButton';
 
 const Hero = () => {
   const [username, setUsername] = useState("");
@@ -101,11 +102,7 @@ const Hero = () => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black rounded-full border border-transparent hover:border-white transition-all duration-300">
-            Star this project ⭐
-            <ArrowRight className="w-4 h-4" />
-            <span className="inline-block transition-transform group-hover:translate-x-1"></span>
-          </button>
+          <RainbowButton />
         </NavLink>
       </div>
     </div>
