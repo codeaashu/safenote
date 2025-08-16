@@ -250,7 +250,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📧 Support
 
 - 🐛 **Bug Reports**: [Create an Issue](https://github.com/codeaashu/safenote/issues)
-- 💡 **Feature Requests**: [Create an Issue](https://github.com/codeaashu/safenote/issues/new)
+- 💡 **Feature Requests**: [Implement new features](https://github.com/codeaashu/safenote/issues/new)
 
 ---
 
