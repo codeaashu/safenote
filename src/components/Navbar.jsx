@@ -18,6 +18,17 @@ const Navbar = () => {
               className="h-8"
             />
           </NavLink>
+          {/* <NavLink
+            to="/"
+            className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 bg-clip-text text-transparent"
+          >
+            <img 
+              src="/wordmark.png" 
+              alt="SafeNote Logo" 
+              className="h-8 w-8"
+            />
+            SafeNote
+          </NavLink> */}
           <div className="flex items-center gap-6">
             <NavLink
               to="https://twitter.com/warrior_aashuu"
