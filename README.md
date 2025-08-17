@@ -17,17 +17,17 @@
 - **Private Workspaces**: Each user gets their own isolated environment
 - **No Tracking**: Your data stays private and secure
 
-### 📝 **Smart Note Management**
-- **Rich Text Support**: Create detailed notes with full formatting
-- **Real-time Search**: Find your notes instantly with live search
-- **Easy Organization**: Categorize and manage your content efficiently
-- **Version History**: Track changes and maintain note versions
-
 ### 🌐 **Sharing & Collaboration**
 - **Secure Sharing**: Share workspace links with password protection
 - **Public Paste Links**: Generate shareable links for individual notes
 - **Copy to Clipboard**: One-click content copying
 - **Social Sharing**: Share via multiple platforms
+
+### 📝 **Smart Note Management**
+- **Rich Text Support**: Create detailed notes with full formatting
+- **Real-time Search**: Find your notes instantly with live search
+- **Easy Organization**: Categorize and manage your content efficiently
+- **Version History**: Track changes and maintain note versions
 
 ### 🚀 **Modern User Experience**
 - **Progressive Web App (PWA)**: Install on any device for native app experience
