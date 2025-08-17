@@ -23,17 +23,17 @@
 - **Easy Organization**: Categorize and manage your content efficiently
 - **Version History**: Track changes and maintain note versions
 
-### 🚀 **Modern User Experience**
-- **Progressive Web App (PWA)**: Install on any device for native app experience
-- **Responsive Design**: Perfect on desktop, tablet, and mobile
-- **Dark Theme**: Easy on the eyes with beautiful dark interface
-- **Instant Loading**: Lightning-fast performance with Vite
-
 ### 🌐 **Sharing & Collaboration**
 - **Secure Sharing**: Share workspace links with password protection
 - **Public Paste Links**: Generate shareable links for individual notes
 - **Copy to Clipboard**: One-click content copying
 - **Social Sharing**: Share via multiple platforms
+
+### 🚀 **Modern User Experience**
+- **Progressive Web App (PWA)**: Install on any device for native app experience
+- **Responsive Design**: Perfect on desktop, tablet, and mobile
+- **Dark Theme**: Easy on the eyes with beautiful dark interface
+- **Instant Loading**: Lightning-fast performance with Vite
 
 ### 🎯 **Advanced Features**
 - **CRUD Operations**: Full Create, Read, Update, Delete functionality
