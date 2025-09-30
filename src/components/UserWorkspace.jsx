@@ -206,8 +206,20 @@ const UserWorkspace = () => {
 
     try {
       // Encrypt the note content before storing
-      const encryptedTitle = await encryptText(newPaste.title, userPassword);
-      const encryptedContent = await encryptText(newPaste.content, userPassword);
+      console.log('🔐 Attempting to encrypt note...');
+      
+      let encryptedTitle, encryptedContent;
+      
+      try {
+        encryptedTitle = await encryptText(newPaste.title, userPassword);
+        encryptedContent = await encryptText(newPaste.content, userPassword);
+        console.log('✅ Encryption successful');
+      } catch (encryptError) {
+        console.error('❌ Encryption failed, falling back to plain text:', encryptError);
+        toast.error("Encryption failed - storing as plain text for now");
+        encryptedTitle = newPaste.title;
+        encryptedContent = newPaste.content;
+      }
 
       const { data, error } = await supabase
         .from('pastes')

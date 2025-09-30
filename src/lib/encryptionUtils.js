@@ -121,12 +121,18 @@ export const deriveKeyFromPassword = async (password, salt) => {
  */
 export const encryptText = async (plaintext, password) => {
   try {
+    console.log('🔐 Starting encryption process...');
+    console.log('🔐 Crypto API available:', !!crypto?.subtle);
+    
     // Generate random salt and IV
     const salt = generateRandomBytes(ENCRYPTION_CONFIG.saltLength);
     const iv = generateRandomBytes(ENCRYPTION_CONFIG.ivLength);
 
+    console.log('🔐 Generated salt and IV');
+
     // Derive key from password
     const key = await deriveKeyFromPassword(password, salt);
+    console.log('🔐 Key derived successfully');
 
     // Encrypt the plaintext
     const encryptedBuffer = await crypto.subtle.encrypt(
@@ -138,6 +144,8 @@ export const encryptText = async (plaintext, password) => {
       stringToArrayBuffer(plaintext)
     );
 
+    console.log('🔐 Text encrypted successfully');
+
     // Combine salt, iv, and encrypted data
     const combinedBuffer = new Uint8Array(
       salt.length + iv.length + encryptedBuffer.byteLength
@@ -148,9 +156,13 @@ export const encryptText = async (plaintext, password) => {
     combinedBuffer.set(new Uint8Array(encryptedBuffer), salt.length + iv.length);
 
     // Return as base64 string
-    return arrayBufferToBase64(combinedBuffer.buffer);
+    const result = arrayBufferToBase64(combinedBuffer.buffer);
+    console.log('🔐 Encryption completed, result length:', result.length);
+    return result;
   } catch (error) {
-    console.error('Error encrypting text:', error);
+    console.error('❌ Error encrypting text:', error);
+    console.error('❌ Crypto support:', !!window.crypto);
+    console.error('❌ Subtle crypto support:', !!window.crypto?.subtle);
     throw new Error('Failed to encrypt text');
   }
 };
