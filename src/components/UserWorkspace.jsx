@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,10 +57,14 @@ const UserWorkspace = () => {
           
           // Check if password was passed from CreateWorkspace
           if (location.state?.password) {
-            setPassword(location.state.password);
-            setUserPassword(location.state.password);
+            const loginPassword = location.state.password;
+            setPassword("");
+            setUserPassword(loginPassword);
             setIsAuthenticated(true);
-            fetchUserPastes();
+            
+            // Fetch pastes with the correct password
+            await fetchUserPastesWithPassword(loginPassword);
+            
             // Clear the password from location state
             navigate(location.pathname, { replace: true });
           }
@@ -74,7 +78,7 @@ const UserWorkspace = () => {
     };
 
     checkUser();
-  }, [username, location.state, navigate, location.pathname]);
+  }, [username, location.state, navigate, location.pathname, fetchUserPastesWithPassword]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -122,6 +126,8 @@ const UserWorkspace = () => {
 
       setIsAuthenticated(true);
       setUserPassword(password); // Store for encryption
+      // Clear the login password field but keep userPassword for encryption
+      setPassword("");
       toast.success(`Welcome back, ${username}!`);
       
       // Track workspace login event
@@ -129,7 +135,8 @@ const UserWorkspace = () => {
         username: username.toLowerCase()
       });
       
-      fetchUserPastes();
+      // Fetch pastes with the correct password immediately
+      await fetchUserPastesWithPassword(password);
     } catch (error) {
       console.error('Error logging in:', error);
       toast.error("Failed to login");
@@ -138,8 +145,9 @@ const UserWorkspace = () => {
     }
   };
 
-  const fetchUserPastes = async () => {
+  const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
     try {
+      console.log('🔍 Fetching pastes with password...');
       const { data, error } = await supabase
         .from('pastes')
         .select('*')
@@ -154,15 +162,17 @@ const UserWorkspace = () => {
           try {
             // Check if already encrypted
             if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
+              console.log('🔐 Decrypting paste:', paste.id);
               return {
                 ...paste,
-                title: await decryptText(paste.title, userPassword),
-                content: await decryptText(paste.content, userPassword)
+                title: await decryptText(paste.title, decryptionPassword),
+                content: await decryptText(paste.content, decryptionPassword)
               };
             } else {
+              console.log('📝 Plain text paste found:', paste.id);
               // Legacy unencrypted note - encrypt it
-              const encryptedTitle = await encryptText(paste.title, userPassword);
-              const encryptedContent = await encryptText(paste.content, userPassword);
+              const encryptedTitle = await encryptText(paste.title, decryptionPassword);
+              const encryptedContent = await encryptText(paste.content, decryptionPassword);
               
               // Update in database
               await supabase
@@ -176,7 +186,7 @@ const UserWorkspace = () => {
               return paste; // Return original for display
             }
           } catch (decryptError) {
-            console.warn('Failed to decrypt paste:', paste.id, decryptError);
+            console.error('❌ Failed to decrypt paste:', paste.id, decryptError);
             // Return as-is if decryption fails (might be corrupted)
             return {
               ...paste,
@@ -187,12 +197,13 @@ const UserWorkspace = () => {
         })
       );
       
+      console.log('✅ Pastes processed:', decryptedPastes.length);
       setPastes(decryptedPastes);
     } catch (error) {
       console.error('Error fetching pastes:', error);
       toast.error("Failed to load pastes");
     }
-  };
+  }, [username]);
 
   const handleCreatePaste = async (e) => {
     e.preventDefault();
