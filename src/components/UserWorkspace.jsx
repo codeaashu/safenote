@@ -38,6 +38,67 @@ const UserWorkspace = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Define fetchUserPastesWithPassword before useEffect to avoid initialization error
+  const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
+    try {
+      console.log('🔍 Fetching pastes with password...');
+      const { data, error } = await supabase
+        .from('pastes')
+        .select('*')
+        .eq('username', username.toLowerCase())
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Decrypt all pastes
+      const decryptedPastes = await Promise.all(
+        (data || []).map(async (paste) => {
+          try {
+            // Check if already encrypted
+            if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
+              console.log('🔐 Decrypting paste:', paste.id);
+              return {
+                ...paste,
+                title: await decryptText(paste.title, decryptionPassword),
+                content: await decryptText(paste.content, decryptionPassword)
+              };
+            } else {
+              console.log('📝 Plain text paste found:', paste.id);
+              // Legacy unencrypted note - encrypt it
+              const encryptedTitle = await encryptText(paste.title, decryptionPassword);
+              const encryptedContent = await encryptText(paste.content, decryptionPassword);
+              
+              // Update in database
+              await supabase
+                .from('pastes')
+                .update({
+                  title: encryptedTitle,
+                  content: encryptedContent
+                })
+                .eq('id', paste.id);
+              
+              return paste; // Return original for display
+            }
+          } catch (decryptError) {
+            console.error('❌ Failed to decrypt paste:', paste.id, decryptError);
+            // Return as-is if decryption fails (might be corrupted)
+            return {
+              ...paste,
+              title: '[Encrypted - Unable to decrypt]',
+              content: '[This note appears to be encrypted but cannot be decrypted with your current password]'
+            };
+          }
+        })
+      );
+      
+      console.log('✅ Pastes processed:', decryptedPastes.length);
+      setPastes(decryptedPastes);
+    } catch (error) {
+      console.error('Error fetching pastes:', error);
+      toast.error("Failed to load pastes");
+    }
+  }, [username]);
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -63,7 +124,11 @@ const UserWorkspace = () => {
             setIsAuthenticated(true);
             
             // Fetch pastes with the correct password
-            await fetchUserPastesWithPassword(loginPassword);
+            try {
+              await fetchUserPastesWithPassword(loginPassword);
+            } catch (fetchError) {
+              console.error('Error fetching pastes on auto-login:', fetchError);
+            }
             
             // Clear the password from location state
             navigate(location.pathname, { replace: true });
@@ -78,7 +143,8 @@ const UserWorkspace = () => {
     };
 
     checkUser();
-  }, [username, location.state, navigate, location.pathname, fetchUserPastesWithPassword]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, location.state?.password, navigate, location.pathname]); // Intentionally excluding fetchUserPastesWithPassword
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -145,65 +211,7 @@ const UserWorkspace = () => {
     }
   };
 
-  const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
-    try {
-      console.log('🔍 Fetching pastes with password...');
-      const { data, error } = await supabase
-        .from('pastes')
-        .select('*')
-        .eq('username', username.toLowerCase())
-        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      // Decrypt all pastes
-      const decryptedPastes = await Promise.all(
-        (data || []).map(async (paste) => {
-          try {
-            // Check if already encrypted
-            if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
-              console.log('🔐 Decrypting paste:', paste.id);
-              return {
-                ...paste,
-                title: await decryptText(paste.title, decryptionPassword),
-                content: await decryptText(paste.content, decryptionPassword)
-              };
-            } else {
-              console.log('📝 Plain text paste found:', paste.id);
-              // Legacy unencrypted note - encrypt it
-              const encryptedTitle = await encryptText(paste.title, decryptionPassword);
-              const encryptedContent = await encryptText(paste.content, decryptionPassword);
-              
-              // Update in database
-              await supabase
-                .from('pastes')
-                .update({
-                  title: encryptedTitle,
-                  content: encryptedContent
-                })
-                .eq('id', paste.id);
-              
-              return paste; // Return original for display
-            }
-          } catch (decryptError) {
-            console.error('❌ Failed to decrypt paste:', paste.id, decryptError);
-            // Return as-is if decryption fails (might be corrupted)
-            return {
-              ...paste,
-              title: '[Encrypted - Unable to decrypt]',
-              content: '[This note appears to be encrypted but cannot be decrypted with your current password]'
-            };
-          }
-        })
-      );
-      
-      console.log('✅ Pastes processed:', decryptedPastes.length);
-      setPastes(decryptedPastes);
-    } catch (error) {
-      console.error('Error fetching pastes:', error);
-      toast.error("Failed to load pastes");
-    }
-  }, [username]);
 
   const handleCreatePaste = async (e) => {
     e.preventDefault();
