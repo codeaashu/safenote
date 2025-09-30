@@ -9,9 +9,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchPasteById } from "../features/PasteThunks";
 import { supabase } from "../lib/supabaseClient";
+import { decryptText, isEncrypted } from '../lib/encryptionUtils';
 
 const ViewPaste = () => {
   const [copiedId, setCopiedId] = useState(null);
+  const [password, setPassword] = useState("");
+  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptedPaste, setDecryptedPaste] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -24,6 +29,45 @@ const ViewPaste = () => {
       dispatch(fetchPasteById(id));
     }
   }, [dispatch, id]);
+
+  // Check if paste needs decryption
+  useEffect(() => {
+    if (paste && paste.title && paste.content) {
+      if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
+        setIsPasswordRequired(true);
+      } else {
+        // Not encrypted, use as-is
+        setDecryptedPaste(paste);
+        setIsPasswordRequired(false);
+      }
+    }
+  }, [paste]);
+
+  const handleDecrypt = async (e) => {
+    e.preventDefault();
+    if (!password || !paste) return;
+
+    setIsDecrypting(true);
+    try {
+      const decryptedTitle = await decryptText(paste.title, password);
+      const decryptedContent = await decryptText(paste.content, password);
+      
+      setDecryptedPaste({
+        ...paste,
+        title: decryptedTitle,
+        content: decryptedContent
+      });
+      setIsPasswordRequired(false);
+      toast.success("Note decrypted successfully!");
+    } catch (error) {
+      console.error('Decryption error:', error);
+      toast.error("Invalid password or corrupted note");
+    } finally {
+      setIsDecrypting(false);
+    }
+  };
+
+  const displayPaste = decryptedPaste || paste;
 
   const handleCopy = (content) => {
     navigator.clipboard.writeText(content);
@@ -55,6 +99,59 @@ const ViewPaste = () => {
           >
             <ArrowLeft className="mr-2 w-4 h-4" /> Back to Home
           </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isPasswordRequired) {
+    return (
+      <div className="min-h-screen w-full p-4 md:p-8 lg:p-12">
+        <div className="max-w-md mx-auto">
+          <Card className="border border-slate-700/50 bg-slate-800/30 backdrop-blur-xl shadow-2xl">
+            <CardContent className="p-6">
+              <div className="text-center space-y-6">
+                <div className="space-y-2">
+                  <Lock className="w-12 h-12 mx-auto text-purple-400" />
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    Protected Note
+                  </h2>
+                  <p className="text-slate-400">
+                    This note is encrypted. Enter the password to view it.
+                  </p>
+                </div>
+                
+                <form onSubmit={handleDecrypt} className="space-y-4">
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password to decrypt"
+                    className="w-full bg-slate-900/50 border-slate-600/50 text-white"
+                    required
+                    autoFocus
+                  />
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate("/")}
+                      className="flex-1 bg-gray-900/50 text-white border-slate-600/50 hover:bg-gray-800/50"
+                    >
+                      <ArrowLeft className="mr-2 w-4 h-4" /> Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isDecrypting || !password}
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                    >
+                      {isDecrypting ? "Decrypting..." : "Decrypt"}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -102,7 +199,7 @@ const ViewPaste = () => {
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-slate-400 text-sm">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  {paste.created_at ? new Date(paste.created_at).toDateString() : ''}
+                  {displayPaste.created_at ? new Date(displayPaste.created_at).toDateString() : ''}
 
                 </div>
               </div>
@@ -112,7 +209,7 @@ const ViewPaste = () => {
             <div className="space-y-6">
               <div className="relative">
                 <Input
-                  value={paste.title}
+                  value={displayPaste.title}
                   disabled
                   className="w-full bg-slate-900/50 border-slate-600/50 text-white text-lg font-semibold h-12 cursor-default focus:ring-0"
                 />
@@ -120,14 +217,14 @@ const ViewPaste = () => {
 
               <div className="relative">
                 <textarea
-                  value={paste.content}
+                  value={displayPaste.content}
                   disabled
                   className="w-full min-h-[200px] md:min-h-[400px] lg:min-h-[600px] p-6 rounded-lg bg-slate-900/50 border border-slate-600/50 text-white text-medium leading-relaxed resize-none cursor-default focus:ring-0"
                 />
                 <Button
                   className="absolute top-3 right-3 bg-slate-700/50 hover:bg-slate-600/50 text-white transition-all duration-300"
                   size="sm"
-                  onClick={() => handleCopy(paste.content)}
+                  onClick={() => handleCopy(displayPaste.content)}
                 >
                   {copiedId === "textarea" ? (
                     <Check className="w-4 h-4" />

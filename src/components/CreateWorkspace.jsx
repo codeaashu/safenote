@@ -7,6 +7,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
+import { hashPassword } from '../lib/passwordUtils';
 
 const CreateWorkspace = () => {
   const { username } = useParams();
@@ -80,12 +81,15 @@ const CreateWorkspace = () => {
         return;
       }
 
+      // Hash the password before storing
+      const hashedPassword = await hashPassword(password);
+
       // Create new user workspace
       const { data, error } = await supabase
         .from('users')
         .insert([{
           username: username.toLowerCase(),
-          password: password,
+          password: hashedPassword,
           created_at: new Date().toISOString()
         }])
         .select()
@@ -104,7 +108,8 @@ const CreateWorkspace = () => {
         username: username.toLowerCase()
       });
       
-      navigate(`/${username}`);
+      // Navigate with password for immediate login and encryption setup
+      navigate(`/${username}`, { state: { password: password } });
     } catch (error) {
       console.error('Error creating workspace:', error);
       toast.error(`Failed to create workspace: ${error.message}`);

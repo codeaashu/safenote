@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Plus, Calendar, Eye, ArrowLeft, User, Copy, Trash, Pencil, Share, Check } from "lucide-react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
+import { verifyPassword, isBcryptHash, hashPassword } from '../lib/passwordUtils';
+import { encryptText, decryptText, isEncrypted } from '../lib/encryptionUtils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +23,9 @@ import {
 const UserWorkspace = () => {
   const { username } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [password, setPassword] = useState("");
+  const [userPassword, setUserPassword] = useState(""); // Store for encryption
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userExists, setUserExists] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +54,16 @@ const UserWorkspace = () => {
           throw error;
         } else {
           setUserExists(true);
+          
+          // Check if password was passed from CreateWorkspace
+          if (location.state?.password) {
+            setPassword(location.state.password);
+            setUserPassword(location.state.password);
+            setIsAuthenticated(true);
+            fetchUserPastes();
+            // Clear the password from location state
+            navigate(location.pathname, { replace: true });
+          }
         }
       } catch (error) {
         console.error('Error checking user:', error);
@@ -60,27 +74,54 @@ const UserWorkspace = () => {
     };
 
     checkUser();
-  }, [username]);
+  }, [username, location.state, navigate, location.pathname]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
+      // First get the user record with the hashed password
+      const { data: userData, error: fetchError } = await supabase
         .from('users')
-        .select('username')
+        .select('username, password')
         .eq('username', username.toLowerCase())
-        .eq('password', password)
         .single();
 
-      if (error || !data) {
+      if (fetchError || !userData) {
+        toast.error("Invalid username or password");
+        setLoading(false);
+        return;
+      }
+
+      // Check if password is already hashed or plain text (for migration)
+      let isPasswordValid = false;
+      
+      if (isBcryptHash(userData.password)) {
+        // Verify against bcrypt hash
+        isPasswordValid = await verifyPassword(password, userData.password);
+      } else {
+        // Legacy plain text comparison (for existing users)
+        isPasswordValid = password === userData.password;
+        
+        // If valid, upgrade to hashed password
+        if (isPasswordValid) {
+          const hashedPassword = await hashPassword(password);
+          await supabase
+            .from('users')
+            .update({ password: hashedPassword })
+            .eq('username', username.toLowerCase());
+        }
+      }
+
+      if (!isPasswordValid) {
         toast.error("Invalid password");
         setLoading(false);
         return;
       }
 
       setIsAuthenticated(true);
+      setUserPassword(password); // Store for encryption
       toast.success(`Welcome back, ${username}!`);
       
       // Track workspace login event
@@ -106,7 +147,47 @@ const UserWorkspace = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPastes(data || []);
+      
+      // Decrypt all pastes
+      const decryptedPastes = await Promise.all(
+        (data || []).map(async (paste) => {
+          try {
+            // Check if already encrypted
+            if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
+              return {
+                ...paste,
+                title: await decryptText(paste.title, userPassword),
+                content: await decryptText(paste.content, userPassword)
+              };
+            } else {
+              // Legacy unencrypted note - encrypt it
+              const encryptedTitle = await encryptText(paste.title, userPassword);
+              const encryptedContent = await encryptText(paste.content, userPassword);
+              
+              // Update in database
+              await supabase
+                .from('pastes')
+                .update({
+                  title: encryptedTitle,
+                  content: encryptedContent
+                })
+                .eq('id', paste.id);
+              
+              return paste; // Return original for display
+            }
+          } catch (decryptError) {
+            console.warn('Failed to decrypt paste:', paste.id, decryptError);
+            // Return as-is if decryption fails (might be corrupted)
+            return {
+              ...paste,
+              title: '[Encrypted - Unable to decrypt]',
+              content: '[This note appears to be encrypted but cannot be decrypted with your current password]'
+            };
+          }
+        })
+      );
+      
+      setPastes(decryptedPastes);
     } catch (error) {
       console.error('Error fetching pastes:', error);
       toast.error("Failed to load pastes");
@@ -124,11 +205,15 @@ const UserWorkspace = () => {
     setLoading(true);
 
     try {
+      // Encrypt the note content before storing
+      const encryptedTitle = await encryptText(newPaste.title, userPassword);
+      const encryptedContent = await encryptText(newPaste.content, userPassword);
+
       const { data, error } = await supabase
         .from('pastes')
         .insert([{
-          title: newPaste.title,
-          content: newPaste.content,
+          title: encryptedTitle,
+          content: encryptedContent,
           username: username.toLowerCase(),
           created_at: new Date().toISOString()
         }])
@@ -137,7 +222,14 @@ const UserWorkspace = () => {
 
       if (error) throw error;
 
-      setPastes([data, ...pastes]);
+      // Decrypt for local state
+      const decryptedPaste = {
+        ...data,
+        title: await decryptText(data.title, userPassword),
+        content: await decryptText(data.content, userPassword)
+      };
+
+      setPastes([decryptedPaste, ...pastes]);
       setNewPaste({ title: "", content: "" });
       setShowCreateForm(false);
       toast.success("Paste created successfully!");
@@ -166,11 +258,15 @@ const UserWorkspace = () => {
     setLoading(true);
 
     try {
+      // Encrypt the updated content
+      const encryptedTitle = await encryptText(editingPaste.title, userPassword);
+      const encryptedContent = await encryptText(editingPaste.content, userPassword);
+
       const { data, error } = await supabase
         .from('pastes')
         .update({
-          title: editingPaste.title,
-          content: editingPaste.content,
+          title: encryptedTitle,
+          content: encryptedContent,
         })
         .eq('id', editingPaste.id)
         .select()
@@ -178,8 +274,15 @@ const UserWorkspace = () => {
 
       if (error) throw error;
 
+      // Decrypt for local state
+      const decryptedPaste = {
+        ...data,
+        title: await decryptText(data.title, userPassword),
+        content: await decryptText(data.content, userPassword)
+      };
+
       // Update the paste in the local state
-      setPastes(pastes.map(p => p.id === editingPaste.id ? data : p));
+      setPastes(pastes.map(p => p.id === editingPaste.id ? decryptedPaste : p));
       setEditingPaste(null);
       toast.success("Paste updated successfully!");
       
