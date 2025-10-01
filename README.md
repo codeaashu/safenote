@@ -1,4 +1,4 @@
-<div align="center">
+safenote<div align="center">
 <a href="https://www.devdisplay.org/"><img src="./public/wordmark.png" width="500px" /></a><br>
 
 `The safest workspace to store and share your private notes & messages!`
