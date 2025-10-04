@@ -40,24 +40,34 @@ async function getSupabaseClient() {
 
 // Secure functions that use database functions instead of direct table access
 export const secureSupabase = {
-  // Create new workspace with password
+  // Create new workspace with password (ultra-secure)
   async createWorkspace(username, password) {
     const client = await getSupabaseClient();
-    const { data, error } = await client.rpc('create_workspace', {
+    
+    // Get user's IP for rate limiting
+    const userIP = await this.getUserIP();
+    
+    const { data, error } = await client.rpc('ultra_secure_create_workspace', {
       p_username: username,
-      p_password: password
+      p_password: password,
+      p_ip_address: userIP
     });
     
     if (error) throw error;
     return data;
   },
 
-  // Verify workspace access
+  // Verify workspace access (ultra-secure)
   async verifyWorkspaceAccess(username, password) {
     const client = await getSupabaseClient();
-    const { data, error } = await client.rpc('verify_workspace_access', {
+    
+    // Get user's IP for rate limiting
+    const userIP = await this.getUserIP();
+    
+    const { data, error } = await client.rpc('ultra_secure_verify_access', {
       p_username: username,
-      p_password: password
+      p_password: password,
+      p_ip_address: userIP
     });
     
     if (error) throw error;
@@ -89,6 +99,17 @@ export const secureSupabase = {
     
     if (error) throw error;
     return data;
+  },
+
+  // Get user's IP address for security tracking
+  async getUserIP() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip || '0.0.0.0';
+    } catch {
+      return '0.0.0.0'; // Fallback IP
+    }
   },
 
   // Get public paste (no password required)
