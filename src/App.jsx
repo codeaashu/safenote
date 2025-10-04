@@ -9,6 +9,7 @@ import PageNotFound from "./components/PageNotFound";
 import UserWorkspace from "./components/UserWorkspace";
 import CreateWorkspace from "./components/CreateWorkspace";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 
 const router = createBrowserRouter([
@@ -63,10 +64,10 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <RouterProvider router={router}/>
       <PWAInstallPrompt />
-    </>
+    </ErrorBoundary>
   );
 }
 
