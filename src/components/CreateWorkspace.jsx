@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Lock, ArrowLeft } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { supabase } from "../lib/supabaseClient";
+import { secureSupabase } from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
-import { hashPassword } from '../lib/passwordUtils';
 
 const CreateWorkspace = () => {
   const { username } = useParams();
@@ -61,47 +60,17 @@ const CreateWorkspace = () => {
     setLoading(true);
 
     try {
-      // Check if username already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('username')
-        .eq('username', username.toLowerCase())
-        .maybeSingle();
+      // Use secure function to create workspace (includes username check and password hashing)
+      const result = await secureSupabase.createWorkspace(username.toLowerCase(), password);
 
-      if (checkError) {
-        console.error('Error checking user:', checkError);
-        toast.error("Error checking username availability");
+      if (result.success) {
+        console.log('User created successfully');
+        toast.success("Workspace created successfully!");
+      } else {
+        toast.error(result.message || "Failed to create workspace");
         setLoading(false);
         return;
       }
-
-      if (existingUser) {
-        toast.error("This username is already taken");
-        setLoading(false);
-        return;
-      }
-
-      // Hash the password before storing
-      const hashedPassword = await hashPassword(password);
-
-      // Create new user workspace
-      const { data, error } = await supabase
-        .from('users')
-        .insert([{
-          username: username.toLowerCase(),
-          password: hashedPassword,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Insert error:', error);
-        throw error;
-      }
-
-      console.log('User created successfully:', data);
-      toast.success("Workspace created successfully!");
       
       // Track workspace creation event
       track('workspace_created', {
