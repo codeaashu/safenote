@@ -8,7 +8,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchPasteById } from "../features/PasteThunks";
-// Supabase direct client not needed here; data comes via thunks
+import { supabase } from "../lib/supabaseClient";
 import { decryptText, isEncrypted } from '../lib/encryptionUtils';
 
 const ViewPaste = () => {

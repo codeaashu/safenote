@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Plus, Calendar, Eye, ArrowLeft, User, Copy, Trash, Pencil, Share, Check } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getSupabaseClient } from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
 import { verifyPassword, isBcryptHash, hashPassword } from '../lib/passwordUtils';
 import { encryptText, decryptText, isEncrypted } from '../lib/encryptionUtils';
@@ -38,74 +38,10 @@ const UserWorkspace = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Define fetchUserPastesWithPassword before useEffect to avoid initialization error
-  const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
-    try {
-      console.log('🔍 Fetching pastes with password...');
-      const client = await getSupabaseClient();
-      const { data, error } = await client
-        .from('pastes')
-        .select('*')
-        .eq('username', username.toLowerCase())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Decrypt all pastes
-      const decryptedPastes = await Promise.all(
-        (data || []).map(async (paste) => {
-          try {
-            // Check if already encrypted
-            if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
-              console.log('🔐 Decrypting paste:', paste.id);
-              return {
-                ...paste,
-                title: await decryptText(paste.title, decryptionPassword),
-                content: await decryptText(paste.content, decryptionPassword)
-              };
-            } else {
-              console.log('📝 Plain text paste found:', paste.id);
-              // Legacy unencrypted note - encrypt it
-              const encryptedTitle = await encryptText(paste.title, decryptionPassword);
-              const encryptedContent = await encryptText(paste.content, decryptionPassword);
-              
-              // Update in database
-              const client2 = await getSupabaseClient();
-              await client2
-                .from('pastes')
-                .update({
-                  title: encryptedTitle,
-                  content: encryptedContent
-                })
-                .eq('id', paste.id);
-              
-              return paste; // Return original for display
-            }
-          } catch (decryptError) {
-            console.error('❌ Failed to decrypt paste:', paste.id, decryptError);
-            // Return as-is if decryption fails (might be corrupted)
-            return {
-              ...paste,
-              title: '[Encrypted - Unable to decrypt]',
-              content: '[This note appears to be encrypted but cannot be decrypted with your current password]'
-            };
-          }
-        })
-      );
-      
-      console.log('✅ Pastes processed:', decryptedPastes.length);
-      setPastes(decryptedPastes);
-    } catch (error) {
-      console.error('Error fetching pastes:', error);
-      toast.error("Failed to load pastes");
-    }
-  }, [username]);
-
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const client3 = await getSupabaseClient();
-        const { error } = await client3
+        const { error } = await supabase
           .from('users')
           .select('username')
           .eq('username', username.toLowerCase())
@@ -127,11 +63,7 @@ const UserWorkspace = () => {
             setIsAuthenticated(true);
             
             // Fetch pastes with the correct password
-            try {
-              await fetchUserPastesWithPassword(loginPassword);
-            } catch (fetchError) {
-              console.error('Error fetching pastes on auto-login:', fetchError);
-            }
+            await fetchUserPastesWithPassword(loginPassword);
             
             // Clear the password from location state
             navigate(location.pathname, { replace: true });
@@ -146,8 +78,7 @@ const UserWorkspace = () => {
     };
 
     checkUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, location.state?.password, navigate, location.pathname]); // Intentionally excluding fetchUserPastesWithPassword
+  }, [username, location.state, navigate, location.pathname, fetchUserPastesWithPassword]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -155,8 +86,7 @@ const UserWorkspace = () => {
 
     try {
       // First get the user record with the hashed password
-      const client4 = await getSupabaseClient();
-      const { data: userData, error: fetchError } = await client4
+      const { data: userData, error: fetchError } = await supabase
         .from('users')
         .select('username, password')
         .eq('username', username.toLowerCase())
@@ -181,8 +111,7 @@ const UserWorkspace = () => {
         // If valid, upgrade to hashed password
         if (isPasswordValid) {
           const hashedPassword = await hashPassword(password);
-          const client5 = await getSupabaseClient();
-          await client5
+          await supabase
             .from('users')
             .update({ password: hashedPassword })
             .eq('username', username.toLowerCase());
@@ -216,7 +145,65 @@ const UserWorkspace = () => {
     }
   };
 
+  const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
+    try {
+      console.log('🔍 Fetching pastes with password...');
+      const { data, error } = await supabase
+        .from('pastes')
+        .select('*')
+        .eq('username', username.toLowerCase())
+        .order('created_at', { ascending: false });
 
+      if (error) throw error;
+      
+      // Decrypt all pastes
+      const decryptedPastes = await Promise.all(
+        (data || []).map(async (paste) => {
+          try {
+            // Check if already encrypted
+            if (isEncrypted(paste.title) && isEncrypted(paste.content)) {
+              console.log('🔐 Decrypting paste:', paste.id);
+              return {
+                ...paste,
+                title: await decryptText(paste.title, decryptionPassword),
+                content: await decryptText(paste.content, decryptionPassword)
+              };
+            } else {
+              console.log('📝 Plain text paste found:', paste.id);
+              // Legacy unencrypted note - encrypt it
+              const encryptedTitle = await encryptText(paste.title, decryptionPassword);
+              const encryptedContent = await encryptText(paste.content, decryptionPassword);
+              
+              // Update in database
+              await supabase
+                .from('pastes')
+                .update({
+                  title: encryptedTitle,
+                  content: encryptedContent
+                })
+                .eq('id', paste.id);
+              
+              return paste; // Return original for display
+            }
+          } catch (decryptError) {
+            console.error('❌ Failed to decrypt paste:', paste.id, decryptError);
+            // Return as-is if decryption fails (might be corrupted)
+            return {
+              ...paste,
+              title: '[Encrypted - Unable to decrypt]',
+              content: '[This note appears to be encrypted but cannot be decrypted with your current password]'
+            };
+          }
+        })
+      );
+      
+      console.log('✅ Pastes processed:', decryptedPastes.length);
+      setPastes(decryptedPastes);
+    } catch (error) {
+      console.error('Error fetching pastes:', error);
+      toast.error("Failed to load pastes");
+    }
+  }, [username]);
 
   const handleCreatePaste = async (e) => {
     e.preventDefault();
@@ -245,8 +232,7 @@ const UserWorkspace = () => {
         encryptedContent = newPaste.content;
       }
 
-      const client6 = await getSupabaseClient();
-      const { data, error } = await client6
+      const { data, error } = await supabase
         .from('pastes')
         .insert([{
           title: encryptedTitle,
@@ -299,8 +285,7 @@ const UserWorkspace = () => {
       const encryptedTitle = await encryptText(editingPaste.title, userPassword);
       const encryptedContent = await encryptText(editingPaste.content, userPassword);
 
-      const client7 = await getSupabaseClient();
-      const { data, error } = await client7
+      const { data, error } = await supabase
         .from('pastes')
         .update({
           title: encryptedTitle,
@@ -353,8 +338,7 @@ const UserWorkspace = () => {
     if (!deleteId) return;
 
     try {
-      const client8 = await getSupabaseClient();
-      const { error } = await client8
+      const { error } = await supabase
         .from('pastes')
         .delete()
         .eq('id', deleteId);
