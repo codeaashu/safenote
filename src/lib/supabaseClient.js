@@ -4,25 +4,108 @@ import { createClient } from '@supabase/supabase-js';
 let supabaseClient = null;
 
 async function getSupabaseConfig() {
+  // Check if we're in development mode
+  const isDev = import.meta.env.VITE_DEV_MODE === 'true';
+  
+  if (isDev) {
+    // SECURE: For development, prompt user for credentials (no storage)
+    return await getSecureDevCredentials();
+  }
+  
   try {
-    // Try API endpoint first (works in production)
+    // Production: Use API endpoint (works in production)
     const response = await fetch('/api/config');
     if (!response.ok) throw new Error('Config API failed');
     return await response.json();
   } catch {
-    console.log('API config failed, using development fallback');
-    // Fallback for development mode - load from environment variables
-    const config = {
-      url: import.meta.env.VITE_SUPABASE_URL,
-      key: import.meta.env.VITE_SUPABASE_ANON_KEY
+    throw new Error('Cannot load secure configuration. Please ensure you are in production or provide development credentials.');
+  }
+}
+
+// Secure development credential handler
+async function getSecureDevCredentials() {
+  // Check if credentials are already cached in memory (not localStorage!)
+  if (window.__supabaseDevConfig) {
+    return window.__supabaseDevConfig;
+  }
+  
+  // Create a secure prompt overlay
+  return new Promise((resolve, reject) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); z-index: 10000; display: flex;
+      align-items: center; justify-content: center; font-family: monospace;
+    `;
+    
+    overlay.innerHTML = `
+      <div style="background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333; max-width: 500px;">
+        <h3 style="color: #fff; margin-bottom: 20px;">🔒 Secure Development Access</h3>
+        <p style="color: #ccc; margin-bottom: 20px;">
+          For security, credentials are not stored locally.<br>
+          Please enter your Supabase credentials for this session:
+        </p>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="color: #fff; display: block; margin-bottom: 5px;">Supabase URL:</label>
+          <input type="text" id="supabase-url" placeholder="https://your-project.supabase.co" 
+                 style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px;" 
+                 value="https://ywarswgsigbpeemavbtt.supabase.co">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="color: #fff; display: block; margin-bottom: 5px;">Anon Key:</label>
+          <input type="password" id="supabase-key" placeholder="eyJhbGciOiJIUzI1NiIs..." 
+                 style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px;">
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+          <button id="connect-btn" style="flex: 1; padding: 10px; background: #0066cc; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+            🔐 Connect Securely
+          </button>
+          <button id="cancel-btn" style="flex: 1; padding: 10px; background: #666; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+            Cancel
+          </button>
+        </div>
+        
+        <p style="color: #888; font-size: 12px; margin-top: 15px;">
+          ✅ Credentials stored in memory only (not on disk)<br>
+          ✅ Automatically cleared when browser closes<br>
+          ✅ Never sent to any third parties
+        </p>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const urlInput = document.getElementById('supabase-url');
+    const keyInput = document.getElementById('supabase-key');
+    const connectBtn = document.getElementById('connect-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    
+    connectBtn.onclick = () => {
+      const url = urlInput.value.trim();
+      const key = keyInput.value.trim();
+      
+      if (!url || !key) {
+        alert('Please enter both URL and key');
+        return;
+      }
+      
+      // Store in memory only (cleared on page refresh)
+      window.__supabaseDevConfig = { url, key };
+      document.body.removeChild(overlay);
+      resolve({ url, key });
     };
     
-    if (!config.url || !config.key) {
-      throw new Error('Supabase configuration not available. Please check your environment variables.');
-    }
+    cancelBtn.onclick = () => {
+      document.body.removeChild(overlay);
+      reject(new Error('User cancelled credential entry'));
+    };
     
-    return config;
-  }
+    // Focus on key input
+    keyInput.focus();
+  });
 }
 
 async function getSupabaseClient() {

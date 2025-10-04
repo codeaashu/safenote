@@ -54,23 +54,48 @@ const DebugTest = () => {
     setLoading(false);
   };
 
+  const clearCredentials = () => {
+    if (window.__supabaseDevConfig) {
+      delete window.__supabaseDevConfig;
+      setResult('🔒 Development credentials cleared from memory.\n');
+    } else {
+      setResult('No credentials found in memory.\n');
+    }
+  };
+
   return (
     <div style={{ padding: '20px', backgroundColor: '#1a1a1a', color: 'white', fontFamily: 'monospace' }}>
       <h2>SafeNote Debug Tool</h2>
-      <button 
-        onClick={testConnection} 
-        disabled={loading}
-        style={{ 
-          padding: '10px 20px', 
-          backgroundColor: loading ? '#666' : '#0066cc', 
-          color: 'white', 
-          border: 'none', 
-          borderRadius: '5px',
-          cursor: loading ? 'not-allowed' : 'pointer'
-        }}
-      >
-        {loading ? 'Testing...' : 'Test Connection & Functions'}
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <button 
+          onClick={testConnection} 
+          disabled={loading}
+          style={{ 
+            padding: '10px 20px', 
+            backgroundColor: loading ? '#666' : '#0066cc', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '5px',
+            cursor: loading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {loading ? 'Testing...' : 'Test Connection & Functions'}
+        </button>
+        
+        <button 
+          onClick={clearCredentials}
+          style={{ 
+            padding: '10px 20px', 
+            backgroundColor: '#cc6600', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          🔒 Clear Credentials
+        </button>
+      </div>
       
       <pre style={{ 
         backgroundColor: '#000', 
