@@ -6,8 +6,8 @@ import { Lock, Plus, Calendar, Eye, ArrowLeft, User, Copy, Trash, Pencil, Share,
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabaseClient";
-import secureSupabase from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
+import { verifyPassword, isBcryptHash, hashPassword } from '../lib/passwordUtils';
 import { encryptText, decryptText, isEncrypted } from '../lib/encryptionUtils';
 import {
   AlertDialog,
@@ -38,7 +38,7 @@ const UserWorkspace = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Define fetchUserPastesWithPassword function before it's used in useEffect
+  // Define fetchUserPastesWithPassword before useEffect to avoid initialization error
   const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
     try {
       console.log('🔍 Fetching pastes with password...');
@@ -102,36 +102,37 @@ const UserWorkspace = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        // Instead of direct table access, we'll attempt a login with a dummy password
-        // to check if user exists. This is a workaround since we can't directly query users table
-        try {
-          const result = await secureSupabase.verifyLogin(username.toLowerCase(), 'dummy_password_check');
-          
-          if (result.error && result.error.includes('Invalid username')) {
-            // User doesn't exist
-            setUserExists(false);
-          } else {
-            // User exists (even if password is wrong)
-            setUserExists(true);
-          }
-        } catch (err) {
-          // If we get any error, assume user doesn't exist for now
-          console.log('User check failed, assuming user does not exist:', err.message);
+        const { error } = await supabase
+          .from('users')
+          .select('username')
+          .eq('username', username.toLowerCase())
+          .single();
+
+        if (error && error.code === 'PGRST116') {
+          // User doesn't exist
           setUserExists(false);
-        }
-        
-        // Check if password was passed from CreateWorkspace
-        if (location.state?.password) {
-          const loginPassword = location.state.password;
-          setPassword("");
-          setUserPassword(loginPassword);
-          setIsAuthenticated(true);
+        } else if (error) {
+          throw error;
+        } else {
+          setUserExists(true);
           
-          // Fetch pastes with the correct password
-          await fetchUserPastesWithPassword(loginPassword);
-          
-          // Clear the password from location state
-          navigate(location.pathname, { replace: true });
+          // Check if password was passed from CreateWorkspace
+          if (location.state?.password) {
+            const loginPassword = location.state.password;
+            setPassword("");
+            setUserPassword(loginPassword);
+            setIsAuthenticated(true);
+            
+            // Fetch pastes with the correct password
+            try {
+              await fetchUserPastesWithPassword(loginPassword);
+            } catch (fetchError) {
+              console.error('Error fetching pastes on auto-login:', fetchError);
+            }
+            
+            // Clear the password from location state
+            navigate(location.pathname, { replace: true });
+          }
         }
       } catch (error) {
         console.error('Error checking user:', error);
@@ -142,33 +143,75 @@ const UserWorkspace = () => {
     };
 
     checkUser();
-  }, [username, location.state, navigate, location.pathname, fetchUserPastesWithPassword]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, location.state?.password, navigate, location.pathname]); // Intentionally excluding fetchUserPastesWithPassword
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Use secure login function
-      const result = await secureSupabase.verifyLogin(username.toLowerCase(), password);
-      
-      if (result.success) {
-        setUserPassword(password);
-        setIsAuthenticated(true);
-        setPassword("");
-        await fetchUserPastesWithPassword(password);
-        toast.success("Login successful!");
-        track('workspace_login', { username: username.toLowerCase() });
-      } else {
-        toast.error(result.error || "Invalid username or password");
+      // First get the user record with the hashed password
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('username, password')
+        .eq('username', username.toLowerCase())
+        .single();
+
+      if (fetchError || !userData) {
+        toast.error("Invalid username or password");
+        setLoading(false);
+        return;
       }
+
+      // Check if password is already hashed or plain text (for migration)
+      let isPasswordValid = false;
+      
+      if (isBcryptHash(userData.password)) {
+        // Verify against bcrypt hash
+        isPasswordValid = await verifyPassword(password, userData.password);
+      } else {
+        // Legacy plain text comparison (for existing users)
+        isPasswordValid = password === userData.password;
+        
+        // If valid, upgrade to hashed password
+        if (isPasswordValid) {
+          const hashedPassword = await hashPassword(password);
+          await supabase
+            .from('users')
+            .update({ password: hashedPassword })
+            .eq('username', username.toLowerCase());
+        }
+      }
+
+      if (!isPasswordValid) {
+        toast.error("Invalid password");
+        setLoading(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setUserPassword(password); // Store for encryption
+      // Clear the login password field but keep userPassword for encryption
+      setPassword("");
+      toast.success(`Welcome back, ${username}!`);
+      
+      // Track workspace login event
+      track('workspace_login', {
+        username: username.toLowerCase()
+      });
+      
+      // Fetch pastes with the correct password immediately
+      await fetchUserPastesWithPassword(password);
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error("Login failed. Please try again.");
+      console.error('Error logging in:', error);
+      toast.error("Failed to login");
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleCreatePaste = async (e) => {
     e.preventDefault();

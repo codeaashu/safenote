@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Lock, ArrowLeft } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import secureSupabase from "../lib/supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
 import { hashPassword } from '../lib/passwordUtils';
 
@@ -61,32 +61,55 @@ const CreateWorkspace = () => {
     setLoading(true);
 
     try {
-      // Hash the password before storing
-      const hashedPassword = await hashPassword(password);
+      // Check if username already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .maybeSingle();
 
-      // Create new user workspace using secure Supabase client
-      const result = await secureSupabase.createWorkspace(username.toLowerCase(), hashedPassword);
-
-      if (result.error) {
-        toast.error(result.error);
+      if (checkError) {
+        console.error('Error checking user:', checkError);
+        toast.error("Error checking username availability");
         setLoading(false);
         return;
       }
 
-      if (result.success) {
-        console.log('User created successfully:', result);
-        toast.success("Workspace created successfully!");
-        
-        // Track workspace creation event
-        track('workspace_created', {
-          username: username.toLowerCase()
-        });
-        
-        // Navigate with password for immediate login and encryption setup
-        navigate(`/${username}`, { state: { password: password } });
-      } else {
-        toast.error("Failed to create workspace");
+      if (existingUser) {
+        toast.error("This username is already taken");
+        setLoading(false);
+        return;
       }
+
+      // Hash the password before storing
+      const hashedPassword = await hashPassword(password);
+
+      // Create new user workspace
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          username: username.toLowerCase(),
+          password: hashedPassword,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Insert error:', error);
+        throw error;
+      }
+
+      console.log('User created successfully:', data);
+      toast.success("Workspace created successfully!");
+      
+      // Track workspace creation event
+      track('workspace_created', {
+        username: username.toLowerCase()
+      });
+      
+      // Navigate with password for immediate login and encryption setup
+      navigate(`/${username}`, { state: { password: password } });
     } catch (error) {
       console.error('Error creating workspace:', error);
       toast.error(`Failed to create workspace: ${error.message}`);

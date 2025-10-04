@@ -8,6 +8,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchPasteById } from "../features/PasteThunks";
+import { supabase } from "../lib/supabaseClient";
 import { decryptText, isEncrypted } from '../lib/encryptionUtils';
 
 const ViewPaste = () => {
@@ -161,7 +162,7 @@ const ViewPaste = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-bold text-white">Note Not Found</h2>
-          <p className="text-slate-400">The note you&apos;re looking for doesn&apos;t exist or has been deleted</p>
+          <p className="text-slate-400">The note you're looking for doesn't exist or has been deleted</p>
           <Button
             variant="outline"
             onClick={() => navigate("/")}

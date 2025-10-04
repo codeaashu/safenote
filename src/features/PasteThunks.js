@@ -1,45 +1,55 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import secureSupabase from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 
 export const fetchPastes = createAsyncThunk('pastes/fetchAll', async () => {
-  // Use secure function instead of direct table access
-  const data = await secureSupabase.getUserPastes('admin'); // fallback for old code
-  return data.pastes || [];
+  const { data, error } = await supabase
+    .from('pastes')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
 });
 
 export const addPaste = createAsyncThunk('pastes/add', async (paste) => {
-  // Use secure function instead of direct table access
-  const data = await secureSupabase.createPaste(
-    'admin', // fallback username
-    paste.title,
-    paste.content
-  );
-  if (!data.success) throw new Error(data.error);
-  return { id: data.id, title: paste.title, content: paste.content };
+  const { data, error } = await supabase
+    .from('pastes')
+    .insert([{ title: paste.title, content: paste.content }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 });
 
 export const updatePaste = createAsyncThunk('pastes/update', async (paste) => {
-  // Note: Update functionality would need to be implemented in database functions
-  // For now, return the paste as-is since direct table access is disabled
-  console.warn('Update paste: Direct table access disabled. Implement secure update function.');
-  return paste;
+  const { data, error } = await supabase
+    .from('pastes')
+    .update({ title: paste.title, content: paste.content })
+    .eq('id', paste.id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 });
 
 export const deletePaste = createAsyncThunk('pastes/delete', async (id) => {
-  // Note: Delete functionality would need to be implemented in database functions
-  // For now, just return the id since direct table access is disabled
-  console.warn('Delete paste: Direct table access disabled. Implement secure delete function.');
+  const { error } = await supabase
+    .from('pastes')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
   return id;
 });
 
 // ...existing code...
 export const fetchPasteById = createAsyncThunk('pastes/fetchById', async (id) => {
-  try {
-    const data = await secureSupabase.getPaste(id);
-    if (!data.success) throw new Error(data.error);
-    return data;
-  } catch (error) {
+  const { data, error } = await supabase
+    .from('pastes')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) {
     console.error('fetchPasteById error:', error);
     throw error;
   }
+  return data;
 });
