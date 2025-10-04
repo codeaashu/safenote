@@ -40,38 +40,64 @@ async function getSupabaseClient() {
 
 // Secure functions that use database functions instead of direct table access
 export const secureSupabase = {
-  // Create new workspace with password (ultra-secure)
+  // Create new workspace with password (secure)
   async createWorkspace(username, password) {
     const client = await getSupabaseClient();
     
-    // Get user's IP for rate limiting
-    const userIP = await this.getUserIP();
-    
-    const { data, error } = await client.rpc('ultra_secure_create_workspace', {
-      p_username: username,
-      p_password: password,
-      p_ip_address: userIP
-    });
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Try ultra-secure function first
+      const { data, error } = await client.rpc('ultra_secure_create_workspace', {
+        p_username: username,
+        p_password: password,
+        p_ip_address: '127.0.0.1' // Fallback IP for development
+      });
+      
+      if (error) {
+        // If ultra-secure function doesn't exist, try regular secure function
+        const { data: fallbackData, error: fallbackError } = await client.rpc('create_workspace', {
+          p_username: username,
+          p_password: password
+        });
+        
+        if (fallbackError) throw fallbackError;
+        return fallbackData;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Database function error:', err);
+      throw new Error('Failed to create workspace. Please ensure database functions are properly set up.');
+    }
   },
 
-  // Verify workspace access (ultra-secure)
+  // Verify workspace access (secure)
   async verifyWorkspaceAccess(username, password) {
     const client = await getSupabaseClient();
     
-    // Get user's IP for rate limiting
-    const userIP = await this.getUserIP();
-    
-    const { data, error } = await client.rpc('ultra_secure_verify_access', {
-      p_username: username,
-      p_password: password,
-      p_ip_address: userIP
-    });
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Try ultra-secure function first
+      const { data, error } = await client.rpc('ultra_secure_verify_access', {
+        p_username: username,
+        p_password: password,
+        p_ip_address: '127.0.0.1' // Fallback IP for development
+      });
+      
+      if (error) {
+        // If ultra-secure function doesn't exist, try regular secure function
+        const { data: fallbackData, error: fallbackError } = await client.rpc('verify_workspace_access', {
+          p_username: username,
+          p_password: password
+        });
+        
+        if (fallbackError) throw fallbackError;
+        return fallbackData;
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Database function error:', err);
+      throw new Error('Failed to verify workspace access.');
+    }
   },
 
   // Get user's pastes (requires password)

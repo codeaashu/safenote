@@ -60,28 +60,51 @@ const CreateWorkspace = () => {
     setLoading(true);
 
     try {
+      console.log('Attempting to create workspace for:', username.toLowerCase());
+      
       // Use secure function to create workspace (includes username check and password hashing)
       const result = await secureSupabase.createWorkspace(username.toLowerCase(), password);
+      
+      console.log('Create workspace result:', result);
 
-      if (result.success) {
+      if (result && result.success) {
         console.log('User created successfully');
         toast.success("Workspace created successfully!");
+        
+        // Track workspace creation event
+        track('workspace_created', {
+          username: username.toLowerCase()
+        });
+        
+        // Navigate with password for immediate login and encryption setup
+        navigate(`/${username}`, { state: { password: password } });
+      } else if (result && result.error) {
+        console.error('Workspace creation failed:', result.error);
+        toast.error(result.error);
+        setLoading(false);
+        return;
       } else {
-        toast.error(result.message || "Failed to create workspace");
+        console.error('Unexpected result format:', result);
+        toast.error("Unexpected response from server");
         setLoading(false);
         return;
       }
-      
-      // Track workspace creation event
-      track('workspace_created', {
-        username: username.toLowerCase()
-      });
-      
-      // Navigate with password for immediate login and encryption setup
-      navigate(`/${username}`, { state: { password: password } });
     } catch (error) {
       console.error('Error creating workspace:', error);
-      toast.error(`Failed to create workspace: ${error.message}`);
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      
+      // More specific error messages
+      if (error.message.includes('Failed to create workspace')) {
+        toast.error("Database configuration issue. Please check the console for details.");
+      } else if (error.message.includes('Function not found')) {
+        toast.error("Database functions not properly set up. Please run the security SQL scripts.");
+      } else {
+        toast.error(`Failed to create workspace: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
