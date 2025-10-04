@@ -1,3 +1,4 @@
+// Secure Supabase client that uses database functions instead of direct table access
 import { createClient } from '@supabase/supabase-js';
 
 // Dynamic configuration loader (secure)
@@ -27,7 +28,7 @@ async function getSupabaseClient() {
   return supabaseClient;
 }
 
-// Secure functions that use database functions instead of direct table access
+// Secure workspace functions that require password verification
 export const secureSupabase = {
   // Create new workspace with password
   async createWorkspace(username, password) {
@@ -95,16 +96,5 @@ export const secureSupabase = {
   }
 };
 
-// SECURITY: Remove all VITE_ variables and direct table access
-// Only use secure client from API endpoint
-export const supabase = {
-  from: () => ({
-    select: () => Promise.reject(new Error('Direct table access disabled for security. Use secureSupabase functions instead.')),
-    insert: () => Promise.reject(new Error('Direct table access disabled for security. Use secureSupabase functions instead.')),
-    update: () => Promise.reject(new Error('Direct table access disabled for security. Use secureSupabase functions instead.')),
-    delete: () => Promise.reject(new Error('Direct table access disabled for security. Use secureSupabase functions instead.'))
-  })
-};
-
-// Export the secure client as default
+// Export the secure client
 export default secureSupabase;
