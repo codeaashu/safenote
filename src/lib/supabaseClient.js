@@ -5,12 +5,23 @@ let supabaseClient = null;
 
 async function getSupabaseConfig() {
   try {
+    // Try API endpoint first (works in production)
     const response = await fetch('/api/config');
     if (!response.ok) throw new Error('Config API failed');
     return await response.json();
-  } catch (error) {
-    console.error('Failed to load secure config:', error);
-    throw new Error('Cannot initialize secure connection');
+  } catch {
+    console.log('API config failed, using development fallback');
+    // Fallback for development mode - load from environment variables
+    const config = {
+      url: import.meta.env.VITE_SUPABASE_URL,
+      key: import.meta.env.VITE_SUPABASE_ANON_KEY
+    };
+    
+    if (!config.url || !config.key) {
+      throw new Error('Supabase configuration not available. Please check your environment variables.');
+    }
+    
+    return config;
   }
 }
 
