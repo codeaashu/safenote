@@ -166,3 +166,6 @@ export const supabase = {
 
 // Export the secure client as default
 export default secureSupabase;
+
+// Export getSupabaseClient for debugging
+export { getSupabaseClient };
