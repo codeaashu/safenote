@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, Plus, Calendar, Eye, ArrowLeft, User, Copy, Trash, Pencil, Share, Check } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
-import { supabase } from "../lib/supabaseClient";
+import { getSupabaseClient } from "../lib/supabaseClient";
 import { track } from '@vercel/analytics';
 import { verifyPassword, isBcryptHash, hashPassword } from '../lib/passwordUtils';
 import { encryptText, decryptText, isEncrypted } from '../lib/encryptionUtils';
@@ -42,7 +42,8 @@ const UserWorkspace = () => {
   const fetchUserPastesWithPassword = useCallback(async (decryptionPassword) => {
     try {
       console.log('🔍 Fetching pastes with password...');
-      const { data, error } = await supabase
+      const client = await getSupabaseClient();
+      const { data, error } = await client
         .from('pastes')
         .select('*')
         .eq('username', username.toLowerCase())
@@ -69,7 +70,8 @@ const UserWorkspace = () => {
               const encryptedContent = await encryptText(paste.content, decryptionPassword);
               
               // Update in database
-              await supabase
+              const client2 = await getSupabaseClient();
+              await client2
                 .from('pastes')
                 .update({
                   title: encryptedTitle,
@@ -102,7 +104,8 @@ const UserWorkspace = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { error } = await supabase
+        const client3 = await getSupabaseClient();
+        const { error } = await client3
           .from('users')
           .select('username')
           .eq('username', username.toLowerCase())
@@ -152,7 +155,8 @@ const UserWorkspace = () => {
 
     try {
       // First get the user record with the hashed password
-      const { data: userData, error: fetchError } = await supabase
+      const client4 = await getSupabaseClient();
+      const { data: userData, error: fetchError } = await client4
         .from('users')
         .select('username, password')
         .eq('username', username.toLowerCase())
@@ -177,7 +181,8 @@ const UserWorkspace = () => {
         // If valid, upgrade to hashed password
         if (isPasswordValid) {
           const hashedPassword = await hashPassword(password);
-          await supabase
+          const client5 = await getSupabaseClient();
+          await client5
             .from('users')
             .update({ password: hashedPassword })
             .eq('username', username.toLowerCase());
@@ -240,7 +245,8 @@ const UserWorkspace = () => {
         encryptedContent = newPaste.content;
       }
 
-      const { data, error } = await supabase
+      const client6 = await getSupabaseClient();
+      const { data, error } = await client6
         .from('pastes')
         .insert([{
           title: encryptedTitle,
@@ -293,7 +299,8 @@ const UserWorkspace = () => {
       const encryptedTitle = await encryptText(editingPaste.title, userPassword);
       const encryptedContent = await encryptText(editingPaste.content, userPassword);
 
-      const { data, error } = await supabase
+      const client7 = await getSupabaseClient();
+      const { data, error } = await client7
         .from('pastes')
         .update({
           title: encryptedTitle,
@@ -346,7 +353,8 @@ const UserWorkspace = () => {
     if (!deleteId) return;
 
     try {
-      const { error } = await supabase
+      const client8 = await getSupabaseClient();
+      const { error } = await client8
         .from('pastes')
         .delete()
         .eq('id', deleteId);
